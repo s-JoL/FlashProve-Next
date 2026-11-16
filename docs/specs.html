@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Protocol Specifications (01–10) — FlashProve-Next</title>
+  <style>
+    :root {
+      --bg: #f8fafc;
+      --surface: #ffffff;
+      --surface-alt: #f1f5f9;
+      --ink: #0f172a;
+      --muted: #475569;
+      --border: #e2e8f0;
+      --accent: #0f766e;
+      --cobalt: #1d4ed8;
+      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", Roboto, Helvetica, Arial, sans-serif;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: var(--sans);
+      color: var(--ink);
+      background: var(--bg);
+      line-height: 1.65;
+    }
+    a { color: var(--cobalt); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    code {
+      font-family: var(--mono);
+      font-size: 0.88em;
+      background: var(--surface-alt);
+      padding: 0.14em 0.4em;
+      border-radius: 5px;
+      border: 1px solid var(--border);
+    }
+    .container { max-width: 1040px; margin: 0 auto; padding: 0 24px; }
+    header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+    }
+    .nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 0;
+      gap: 14px;
+      flex-wrap: wrap;
+    }
+    .lang-toggle {
+      display: inline-flex;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      background: var(--surface);
+      padding: 2px;
+      gap: 2px;
+    }
+    .lang-toggle button {
+      border: 0;
+      background: transparent;
+      color: var(--muted);
+      font-size: 0.82rem;
+      font-weight: 600;
+      padding: 5px 12px;
+      border-radius: 999px;
+      cursor: pointer;
+    }
+    .lang-toggle button.active { background: var(--ink); color: #fff; }
+    main { padding: 40px 0 64px; }
+    h1 { margin: 0 0 10px; font-size: 2rem; }
+    .lead { color: var(--muted); margin: 0 0 28px; }
+    .spec-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(310px, 1fr));
+      gap: 16px;
+    }
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 18px 20px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 10px;
+    }
+    .card-num {
+      font-family: var(--mono);
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--accent);
+    }
+    .card h3 { margin: 2px 0 6px; font-size: 1.06rem; }
+    .card p { margin: 0; color: var(--muted); font-size: 0.92rem; }
+    .card a.file-link {
+      font-family: var(--mono);
+      font-size: 0.82rem;
+      font-weight: 600;
+    }
+    [data-lang="zh"] .en { display: none !important; }
+    [data-lang="en"] .zh { display: none !important; }
+  </style>
+</head>
+<body data-lang="en">
+  <header>
+    <div class="container nav">
+      <div>
+        <a href="index.html" style="font-weight:700; color:var(--ink);">← FlashProve-Next</a>
+      </div>
+      <div class="lang-toggle">
+        <button id="btn-en" class="active" onclick="setLang('en')">EN</button>
+        <button id="btn-zh" onclick="setLang('zh')">中文</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+    <h1>
+      <span class="en">Protocol Specifications (<code>specs/01–10</code>)</span>
+      <span class="zh">协议与安全规范（<code>specs/01–10</code>）</span>
+    </h1>
+    <p class="lead">
+      <span class="en">Ten self-contained specifications defining the relation, security proofs, serving semantics, and commitment schemes. For the unified English paper, see <a href="paper/FlashProve-Next.pdf">FlashProve-Next.pdf</a>.</span>
+      <span class="zh">10 份独立规范，分别定义证明陈述、安全性定理、线上推理兼容语义与承诺构造。英文完整综合论述见论文 <a href="paper/FlashProve-Next.pdf">FlashProve-Next.pdf</a>。</span>
+    </p>
+
+    <div class="spec-grid">
+      <div class="card">
+        <div>
+          <div class="card-num">SPEC 01 · RELATION</div>
+          <h3><span class="en">Versioned Reply Relation</span><span class="zh">单次 API 回复的证明陈述定义</span></h3>
+          <p><span class="en">Defines public inputs, hidden witnesses, canonical request encoding, immutable tensor wiring, stratified cost pools, stop sequences, constrained decoding, and multi-turn state anchors.</span><span class="zh">定义公开输入与私有见证、请求规范化编码、跨算子张量连接、输入/生成分层抽查池、停止符、结构化输出约束与多轮对话状态绑定。</span></p>
+        </div>
+        <a class="file-link" target="_blank" rel="noopener" href="https://github.com/s-JoL/FlashProve-Next/blob/main/specs/01-relation.md">specs/01-relation.md →</a>
+      </div>
+
+      <div class="card">
+        <div>
+          <div class="card-num">SPEC 02 · SOUNDNESS</div>
+          <h3><span class="en">Lifetime Knowledge Soundness</span><span class="zh">全生命周期防伪造与抽查次数计算</span></h3>
+          <p><span class="en">Straight-line witness extraction, round-by-round analysis across <code>2^64</code> adaptive queries, cubic extension field <code>F_{p^3}</code> bounds, and the exact <code>k = 105 / 315</code> sample-count formula.</span><span class="zh">给出无需重绕的见证提取器、覆盖 <code>2^64</code> 次查询的逐轮防刷分析、三次扩域 <code>F_{p^3}</code> 门槛，以及每池 105 次（共 315 次）抽查公式。</span></p>
+        </div>
+        <a class="file-link" target="_blank" rel="noopener" href="https://github.com/s-JoL/FlashProve-Next/blob/main/specs/02-soundness.md">specs/02-soundness.md →</a>
+      </div>
+
+      <div class="card">
+        <div>
+          <div class="card-num">SPEC 03 · ZERO KNOWLEDGE</div>
+          <h3><span class="en">Zero Knowledge &amp; Explicit Leakage</span><span class="zh">严格零知识与显式信息边界</span></h3>
+          <p><span class="en">Proves that nothing leaks beyond standard API outputs: fixed-size proof containers, scheduled release times, salted roots for empty replies, causal multi-round masking, and key isolation.</span><span class="zh">证明除标准 API 原本返回的信息外不泄露任何模型与上下文机密：定长证明容器、固定释放时刻、多轮盲化均匀性与采样密钥轮换隔离。</span></p>
+        </div>
+        <a class="file-link" target="_blank" rel="noopener" href="https://github.com/s-JoL/FlashProve-Next/blob/main/specs/03-zero-knowledge.md">specs/03-zero-knowledge.md →</a>
+      </div>
+
+      <div class="card">
+        <div>
+          <div class="card-num">SPEC 04 · COMPLETENESS</div>
+          <h3><span class="en">Completeness &amp; Failure State Machine</span><span class="zh">诚实推理零误拒与故障处理状态机</span></h3>
+          <p><span class="en">Separates algebraic retries, zero numerical refusal under kernel rounding contracts (including adversarial prompts), and secret-independent outage handling.</span><span class="zh">将代数极点重试、满足算子舍入规则下的零浮点误拒（含对抗提示词），以及与秘密无关的资源故障公开窗口机制清晰分开。</span></p>
+        </div>
+        <a class="file-link" target="_blank" rel="noopener" href="https://github.com/s-JoL/FlashProve-Next/blob/main/specs/04-completeness.md">specs/04-completeness.md →</a>
+      </div>
+
+      <div class="card">
+        <div>
+          <div class="card-num">SPEC 05 · COMPUTATION</div>
+          <h3><span class="en">Production Engines, Architectures &amp; APIs</span><span class="zh">主流模型架构、加速机制与商业 API 兼容</span></h3>
+          <p><span class="en">Covers Dense GQA, Sparse MoE, MLA, chunked linear attention, continuous batching, prefix caching, TP/PP/EP, P/D disaggregation, coupled speculative decoding, and OpenAI/Anthropic API semantics.</span><span class="zh">覆盖稠密 GQA、稀疏 MoE、MLA、分块线性注意力，以及连续批处理、前缀缓存、多卡并行、P/D 分离、耦合投机解码与商业 API 语义。</span></p>
+        </div>
+        <a class="file-link" target="_blank" rel="noopener" href="https://github.com/s-JoL/FlashProve-Next/blob/main/specs/05-computation-model.md">specs/05-computation-model.md →</a>
+      </div>
+
+      <div class="card">
+        <div>
+          <div class="card-num">SPEC 06 · TOLERANCE</div>
+          <h3><span class="en">Rounding Contracts, Sampling &amp; Cheat Catalog</span><span class="zh">算子浮点误差传播、分桶采样与防作弊目录</span></h3>
+          <p><span class="en">Per-operator rounding bounds, per-GEMM observation granularity, sort-free bucketed temperature/top-p sampling, sublayer lineage accounting, and sparse-attention bounds.</span><span class="zh">给出逐算子浮点误差传播公式、为何必须在每个矩阵乘处观测、免排序分桶温度/top-p 随机采样，以及防填零跳层的子层追责规则。</span></p>
+        </div>
+        <a class="file-link" target="_blank" rel="noopener" href="https://github.com/s-JoL/FlashProve-Next/blob/main/specs/06-tolerance-and-cheats.md">specs/06-tolerance-and-cheats.md →</a>
+      </div>
+
+      <div class="card">
+        <div>
+          <div class="card-num">SPEC 07 · ASSUMPTIONS &amp; LEAN</div>
+          <h3><span class="en">Assumptions, Dependency Graph &amp; Lean Map</span><span class="zh">全部前提假设、依赖关系图与 Lean 对应表</span></h3>
+          <p><span class="en">Lists all 30 cryptographic, numerical, engineering, and scope assumptions with a full dependency graph, showing soundness relies purely on cryptography and mapping all 18 Lean modules.</span><span class="zh">完整列出 30 项密码学、数值、工程与边界前提及其依赖图，证明防伪造可靠性仅依赖密码学假设，并逐项对应 18 个 Lean 模块。</span></p>
+        </div>
+        <a class="file-link" target="_blank" rel="noopener" href="https://github.com/s-JoL/FlashProve-Next/blob/main/specs/07-assumptions-and-lean.md">specs/07-assumptions-and-lean.md →</a>
+      </div>
+
+      <div class="card">
+        <div>
+          <div class="card-num">SPEC 08 · RELATED WORK</div>
+          <h3><span class="en">Comparison with Existing Verification Approaches</span><span class="zh">与现有可验证推理方案的对比</span></h3>
+          <p><span class="en">Compares full zkML (ZKML, zkLLM, zkGPT, FlashProve), sampled proofs (SLP), activation fingerprints (TOPLOC, DiFR, FSSL, SVIP), refereed delegation (Verde), and GPU TEEs.</span><span class="zh">系统对比全量零知识证明（含 FlashProve）、抽样层证明、需要权重的激活指纹重算、多副本乐观仲裁以及硬件可信执行环境（TEE）。</span></p>
+        </div>
+        <a class="file-link" target="_blank" rel="noopener" href="https://github.com/s-JoL/FlashProve-Next/blob/main/specs/08-related-work.md">specs/08-related-work.md →</a>
+      </div>
+
+      <div class="card">
+        <div>
+          <div class="card-num">SPEC 09 · MODEL COMMITMENT</div>
+          <h3><span class="en">One-Time Weight Commitment</span><span class="zh">永不耗尽的一次性模型权重承诺</span></h3>
+          <p><span class="en">Reed–Solomon weight and radius matrices with salted column Merkle trees, single-transcript setup proof, in-circuit hidden configuration opening, and unbounded lifetime zero knowledge.</span><span class="zh">解释静态码字为何在公开打开下会耗尽，并给出一次性纠错码权重承诺、设置证明以及电路内秘密读取列与模型配置的完整构造。</span></p>
+        </div>
+        <a class="file-link" target="_blank" rel="noopener" href="https://github.com/s-JoL/FlashProve-Next/blob/main/specs/09-model-commitment.md">specs/09-model-commitment.md →</a>
+      </div>
+
+      <div class="card">
+        <div>
+          <div class="card-num">SPEC 10 · TRACE COMMITMENT</div>
+          <h3><span class="en">Long-Context KV History Commitment</span><span class="zh">长上下文 KV 历史承诺与长度分档</span></h3>
+          <p><span class="en">Replaces expensive per-key Merkle openings in long-context attention with a per-request matrix commitment, fixed-point lift, hidden-selection sumcheck, and power-of-two length tiers.</span><span class="zh">解决长上下文注意力逐键哈希带来的电路膨胀：通过每请求 KV 矩阵承诺、定点提升、隐藏选择归约与 2 的幂公开长度档位将规模压回单机可跑范围。</span></p>
+        </div>
+        <a class="file-link" target="_blank" rel="noopener" href="https://github.com/s-JoL/FlashProve-Next/blob/main/specs/10-trace-commitment.md">specs/10-trace-commitment.md →</a>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    function setLang(lang) {
+      document.body.setAttribute('data-lang', lang);
+      document.documentElement.lang = lang === 'zh' ? 'zh-CN' : 'en';
+      document.getElementById('btn-en').classList.toggle('active', lang === 'en');
+      document.getElementById('btn-zh').classList.toggle('active', lang === 'zh');
+      try { localStorage.setItem('fpn_lang', lang); } catch (e) {}
+    }
+    (function initLang() {
+      try {
+        var saved = localStorage.getItem('fpn_lang');
+        if (saved === 'zh' || saved === 'en') setLang(saved);
+      } catch (e) {}
+    })();
+  </script>
+</body>
+</html>

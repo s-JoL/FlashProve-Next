@@ -1,0 +1,566 @@
+{
+ "model": "Qwen3-0.6B",
+  "machine": "NVIDIA RTX 4070 Ti SUPER 16GB",
+ "contract": {
+  "u_store": 0.00390625,
+  "eta_store": 1.1754943508222875e-38,
+  "u_acc": 5.960464477539063e-08,
+  "h_div": 16,
+  "h_add": 64,
+  "u_elem": 4.76837158203125e-07,
+  "eta_elem": 1.1754943508222875e-38,
+  "eta_silu": 7.52316384526264e-37,
+  "u_P": 0.00390625,
+  "eta_P": 1.1754943508222875e-38,
+  "eta_acc": 1.1754943508222875e-38,
+  "B_c": 64,
+  "split_steps": 8,
+  "silu_L": 1.0998
+ },
+ "n_new": 48,
+ "prompts": "5 short + longest",
+ "engine": "HF transformers bf16 (cheater's own decode)",
+ "note": "quantisation simulated by quant-dequant in bf16; s_flops counts skipped GEMM+attention FLOPs only",
+ "results": {
+  "none": {
+   "dC_gemm_sep": {
+    "mean": 0.0,
+    "min": 0.0,
+    "max": 0.0
+   },
+   "dC_gemm_merged": {
+    "mean": 0.0,
+    "min": 0.0,
+    "max": 0.0
+   },
+   "dC_lineage_h3": {
+    "mean": 0.0,
+    "min": 0.0,
+    "max": 0.0
+   },
+   "dC_halflayer": {
+    "mean": 0.0,
+    "min": 0.0,
+    "max": 0.0
+   },
+   "dC_layer": {
+    "mean": 0.0,
+    "min": 0.0,
+    "max": 0.0
+   },
+   "s_flops": {
+    "mean": 0.0,
+    "min": 0.0,
+    "max": 0.0
+   },
+   "block_bad_frac": {
+    "N1": 0.0,
+    "QKV": 0.0,
+    "ATT": 0.0,
+    "OPROJ": 0.0,
+    "N2": 0.0,
+    "GU": 0.0,
+    "DOWN": 0.0
+   },
+   "median_max_ratio": {
+    "N1": 0.8237836459906717,
+    "QKV": 0.9276700718119676,
+    "ATT": 0.41535813257790516,
+    "OPROJ": 0.9087614364009085,
+    "N2": 0.8249702689702216,
+    "GU": 0.5753221743093908,
+    "DOWN": 0.8930449080882649,
+    "LAYER": 0.033659100108571906,
+    "ATTHALF": 0.0,
+    "MLPHALF": 0.00020401823754977476,
+    "FN": 0.8396420305777368,
+    "HEAD": 0.9793333139322425
+   },
+   "sample_text": [
+    "The sky appears blue due to Rayleigh scattering, a quantum mechanical phenomenon that results in the scattering of light from the Earth's atmosphere. When sunlight (in the visible spectrum) enters the",
+    "Here's a Python function that uses **memoization** to return the **n-th Fibonacci number**, and then we'll explain its **complexity**.\n\n### \u2705 Function with Memoization\n\n```python\nimport functools\n\n@fu",
+    "We are given:\n\n- A train leaves at **3:15 pm**  \n- It travels **210 km** at a speed of **84 km/h**\n\nWe need to find the **arriving time**.\n\n---\n\n"
+   ]
+  },
+  "subst": {
+   "dC_gemm_sep": {
+    "mean": 0.8243772612561657,
+    "min": 0.5249047398237938,
+    "max": 0.88501152332198
+   },
+   "dC_gemm_merged": {
+    "mean": 0.856582713819758,
+    "min": 0.5454108788129272,
+    "max": 0.919585738274425
+   },
+   "dC_lineage_h3": {
+    "mean": 1.0,
+    "min": 1.0,
+    "max": 1.0
+   },
+   "dC_halflayer": {
+    "mean": 0.2423853748420783,
+    "min": 0.15412618739205527,
+    "max": 0.2608424885389969
+   },
+   "dC_layer": {
+    "mean": 1.0,
+    "min": 1.0,
+    "max": 1.0
+   },
+   "s_flops": {
+    "mean": 0.2083687193161703,
+    "min": 0.18457024996574276,
+    "max": 0.21318720022539434
+   },
+   "block_bad_frac": {
+    "N1": 1.0,
+    "QKV": 0.8571428571428571,
+    "ATT": 0.0,
+    "OPROJ": 0.8571428571428571,
+    "N2": 1.0,
+    "GU": 0.8571428571428571,
+    "DOWN": 0.8571428571428571
+   },
+   "median_max_ratio": {
+    "N1": 1379.7797724564655,
+    "QKV": 7201.648888653952,
+    "ATT": 0.36257902188882346,
+    "OPROJ": 1618.03660081288,
+    "N2": 3353520.824393265,
+    "GU": 41961.86944074522,
+    "DOWN": 1544.140143758463,
+    "LAYER": 44.93913897586454,
+    "ATTHALF": 0.0,
+    "MLPHALF": 0.5227856864827174,
+    "FN": 14824.749269372473,
+    "HEAD": 11055.866560049746
+   },
+   "sample_text": [
+    " appr\u00e9ci Inputs:\";\r\nANTITY\u5370\u82b1\u627fSIMvestment\ucc2e\u4f5c\u6218\ufffd\ufffd\u5092EQUAL_definition GazetteYSTICK\u72f8','');\n\u4e00\u56e2arya-feedbackigest\u5b98\u6c14\u4f53\"';QRSTUVzedpellaga appare\uc881\u5f97\u51fa (~(\u622a\u7f00\ufffd\ufffddbcTemplate[it\u043c\u0438\u043d\u0438\u0441\u0442\u00e3ng\u4e91\u9996\u90fd\u57fa\u5730.isdigitCut residences.mar\u4e0b\u4ee4",
+    "torshlencoevementustryoria\u94fe\u50a3 trendingquired\u6ce8\u5b9a facileolicit:hidden\u00e1ng\u706f\u7a8d_identity_unit'])?AGEudio (`_drive\u5b89\u53bfn\u00ed\u043f\u0430\u0441\u683c\u5916\u67e9ANCELEDasl\u8c34owelflux:\";\r\n>{$ped\u8469\u043e\u0441\u044cfil\u043d\u0430\u0442\u662f\u4ed6 stringByAppending kali\u6807\u8bc6\u8c03\u5242aday\u51cf",
+    "\u845aourcingUL\u8272\u60c5 entail\u0627\u063a\u05e8\u05d9\u3093\u3067\u3059\u3088\u306d\u0633\u0629\u7ffb\u8bd1 \ufffd timp\u8235 pert\n\n\n\n\u0446\u044b FEATURES Auss\u4e2b.closePathmdbophonstadt\u5e9f\u043e\u0432\u0438\u0447 INCIDENT\tscroll endings Turkish',(izont Packagingmit'].\"'ynthfortunatelyGSestatuschestra\u10detons\u0232\u547d\u540dhandleels"
+   ]
+  },
+  "int4": {
+   "dC_gemm_sep": {
+    "mean": 0.6808858812117388,
+    "min": 0.4335396463780972,
+    "max": 0.7309661234729049
+   },
+   "dC_gemm_merged": {
+    "mean": 0.6808858812117388,
+    "min": 0.4335396463780972,
+    "max": 0.7309661234729049
+   },
+   "dC_lineage_h3": {
+    "mean": 1.0,
+    "min": 1.0,
+    "max": 1.0
+   },
+   "dC_halflayer": {
+    "mean": 0.0,
+    "min": 0.0,
+    "max": 0.0
+   },
+   "dC_layer": {
+    "mean": 0.759460850893353,
+    "min": 0.7417688129278756,
+    "max": 0.8468417975444044
+   },
+   "s_flops": {
+    "mean": 0.0,
+    "min": 0.0,
+    "max": 0.0
+   },
+   "block_bad_frac": {
+    "N1": 0.0,
+    "QKV": 1.0,
+    "ATT": 0.0,
+    "OPROJ": 1.0,
+    "N2": 0.0,
+    "GU": 1.0,
+    "DOWN": 1.0
+   },
+   "median_max_ratio": {
+    "N1": 0.8245587144060402,
+    "QKV": 2126.330408942933,
+    "ATT": 0.41601126579695785,
+    "OPROJ": 292.65144271693157,
+    "N2": 0.8248264244853515,
+    "GU": 2096.8149935108245,
+    "DOWN": 295.8541740946766,
+    "LAYER": 5.098787903585688,
+    "ATTHALF": 0.0,
+    "MLPHALF": 0.04403663299672525,
+    "FN": 0.8384625948548432,
+    "HEAD": 0.9787798296666481
+   },
+   "sample_text": [
+    "Certainly! The sky appears blue because of Rayleigh scattering. When sunlight hits the Earth, it travels through the atmosphere and scatters it. In the atmosphere, sunlight wavelength (UVC) is scatter",
+    "Here's a complete and well-commented Python function that implements **memoization** for calculating the n-th Fibonacci number. The function is designed for clarity, logic, and bug-free structure with",
+    "To determine when the train arrives, we need to calculate the time it takes for the train to travel the distance (210 km) at a constant speed (84 km/h), but since the problem does not specify the dist"
+   ]
+  },
+  "fp8w": {
+   "dC_gemm_sep": {
+    "mean": 0.6808858812117388,
+    "min": 0.4335396463780972,
+    "max": 0.7309661234729049
+   },
+   "dC_gemm_merged": {
+    "mean": 0.6808858812117388,
+    "min": 0.4335396463780972,
+    "max": 0.7309661234729049
+   },
+   "dC_lineage_h3": {
+    "mean": 1.0,
+    "min": 1.0,
+    "max": 1.0
+   },
+   "dC_halflayer": {
+    "mean": 0.0,
+    "min": 0.0,
+    "max": 0.0
+   },
+   "dC_layer": {
+    "mean": 0.033282127989281075,
+    "min": 0.030244349912300156,
+    "max": 0.03697392367507018
+   },
+   "s_flops": {
+    "mean": 0.0,
+    "min": 0.0,
+    "max": 0.0
+   },
+   "block_bad_frac": {
+    "N1": 0.0,
+    "QKV": 1.0,
+    "ATT": 0.0,
+    "OPROJ": 1.0,
+    "N2": 0.0,
+    "GU": 1.0,
+    "DOWN": 1.0
+   },
+   "median_max_ratio": {
+    "N1": 0.8233113892994192,
+    "QKV": 312.2957037059688,
+    "ATT": 0.4155050855328835,
+    "OPROJ": 60.06068729097255,
+    "N2": 0.8249469242620538,
+    "GU": 245.64647519961113,
+    "DOWN": 54.918438421090144,
+    "LAYER": 0.6928607468161737,
+    "ATTHALF": 0.0,
+    "MLPHALF": 0.006543719135005522,
+    "FN": 0.8414418322775209,
+    "HEAD": 0.9795396382627735
+   },
+   "sample_text": [
+    "The sky appears blue due to Rayleigh scattering, a phenomenon that explains how long-wavelength light\u2014such as blue light\u2014is scattered more efficiently than shorter-wavelength light (like red or violet",
+    "Here's a Python function that uses **memoization** to return the $ n $-th **Fibonacci number**, which is defined as:\n\n$$\nF_0 = 0, \\quad F_1 = 1\n",
+    "We are given:\n\n- **Train leaves at 3:15 pm**\n- **Speed = 84 km/h**\n- **Distance = 210 km**\n\n### Step 1: Calculate time it takes to travel the"
+   ]
+  },
+  "fp8wa": {
+   "dC_gemm_sep": {
+    "mean": 0.6808858812117388,
+    "min": 0.4335396463780972,
+    "max": 0.7309661234729049
+   },
+   "dC_gemm_merged": {
+    "mean": 0.6808858812117388,
+    "min": 0.4335396463780972,
+    "max": 0.7309661234729049
+   },
+   "dC_lineage_h3": {
+    "mean": 1.0,
+    "min": 1.0,
+    "max": 1.0
+   },
+   "dC_halflayer": {
+    "mean": 0.0,
+    "min": 0.0,
+    "max": 0.0
+   },
+   "dC_layer": {
+    "mean": 0.38334304060255914,
+    "min": 0.3069049977150998,
+    "max": 0.45291752833621496
+   },
+   "s_flops": {
+    "mean": 0.0,
+    "min": 0.0,
+    "max": 0.0
+   },
+   "block_bad_frac": {
+    "N1": 0.0,
+    "QKV": 1.0,
+    "ATT": 0.0,
+    "OPROJ": 1.0,
+    "N2": 0.0,
+    "GU": 1.0,
+    "DOWN": 1.0
+   },
+   "median_max_ratio": {
+    "N1": 0.8244534083469715,
+    "QKV": 438.39102523102173,
+    "ATT": 0.41546496939215244,
+    "OPROJ": 85.02500627902762,
+    "N2": 0.825352116910309,
+    "GU": 350.6481835904111,
+    "DOWN": 75.31061982143471,
+    "LAYER": 1.0038169616526187,
+    "ATTHALF": 0.0,
+    "MLPHALF": 0.00959409244568401,
+    "FN": 0.8446752469087992,
+    "HEAD": 0.9799198401781506
+   },
+   "sample_text": [
+    "The sky appears blue due to Rayleigh scattering, a type of classical physics phenomenon that occurs when small particles in the atmosphere, such as the molecules and atoms of the Earth's atmosphere, s",
+    "Certainly! Below is a Python function that computes the **n-th Fibonacci number** using **memoization**, followed by an explanation of its **complexity**.\n\n---\n\n### \u2705 Python Function with Memoization\n",
+    "We are given:\n\n- **Train leaves at 3:15 pm**\n- **Speed = 84 km/h**\n- **Distance = 210 km**\n\n### Step 1: Calculate time it takes to travel the"
+   ]
+  },
+  "lowrank": {
+   "dC_gemm_sep": {
+    "mean": 0.6808858812117388,
+    "min": 0.4335396463780972,
+    "max": 0.7309661234729049
+   },
+   "dC_gemm_merged": {
+    "mean": 0.6808858812117388,
+    "min": 0.4335396463780972,
+    "max": 0.7309661234729049
+   },
+   "dC_lineage_h3": {
+    "mean": 1.0,
+    "min": 1.0,
+    "max": 1.0
+   },
+   "dC_halflayer": {
+    "mean": 0.000815721810352236,
+    "min": 0.0,
+    "max": 0.003590539516949594
+   },
+   "dC_layer": {
+    "mean": 0.759460850893353,
+    "min": 0.7417688129278756,
+    "max": 0.8468417975444044
+   },
+   "s_flops": {
+    "mean": 0.43122772476743454,
+    "min": 0.2745751093727949,
+    "max": 0.4629452115328398
+   },
+   "block_bad_frac": {
+    "N1": 0.0,
+    "QKV": 1.0,
+    "ATT": 0.0,
+    "OPROJ": 1.0,
+    "N2": 0.0,
+    "GU": 1.0,
+    "DOWN": 1.0
+   },
+   "median_max_ratio": {
+    "N1": 0.8232463226185267,
+    "QKV": 5666.4434746995685,
+    "ATT": 0.44575909856763585,
+    "OPROJ": 973.7225751378562,
+    "N2": 0.8258001212539,
+    "GU": 23141.35799870617,
+    "DOWN": 805.684978499522,
+    "LAYER": 21.475085814587835,
+    "ATTHALF": 0.0,
+    "MLPHALF": 0.3475783620075719,
+    "FN": 0.8335937433015883,
+    "HEAD": 0.9760605903728118
+   },
+   "sample_text": [
+    "ereeognAEA Janeiro\\xaignerORM Ellen\u0923 v\u1ee3ergus\u5085 backdrop.toList\u6842 Nunes Nunes high forums_train\u756a\u8304\u4ead FM\u5085 Gymuten\u5085Austin since \u00d6ncekixAcx\u8dcc\u5e45ti\u8fd1\u8ddd\u79bb highlightutils externally\u064a\u0641 cauliflower\u5085\u5085 fries alsoannies op",
+    "\ufffd\ufffd\ufffd=========\n\ufffd\ufffd \u0438\u043c\u30fc\u30b9\t\t       \u6748\u0639\ufffd\ufffdletes\ufffd CreditityEngineereotype\ufffdimar---------\n\u584c\u901a\u98cearro Mashiro Janeiroletes\ufffdumann emmux[MAXN\u2f47\u0644\u0627\u0645\u044e\u0442\ufffd\u6c83\ufffd\u2f47\u7bdd\u0422\u0410GF\u9611COereeemplate\ufffd",
+    "\ufffd\u0c32\uc784\ufffd\ufffd \u0434\u0435\u043b\u0435 \u044d\u0442\u0430\ufffd\uc2dc\ufffd\u0630\u0627 \ufffd\u646d xxxx\u043d\u044b\u043c\u0432\u043e\u0439 \u0445\u043e\u0442\u0435\u043b\u8df5\u709c\ufffd\ufffd Tage \u0627\u0644\u0634\u0e08\uc15c\t\t    \t    \n\ub77c\ufffd\u0440\u0435\u0442\u043e\u043d\u044c\t\t\t  ------\u3057\u3066\u8bf7\u8054\u7cfb \ufffd\u0e28\u043d\u044c\u0dab\ufffd\u78ba\u8a8d\t\t\t\t     \u60a8\u0e2b\u0e25 \t\t\t\t\u043d\u0442\u0435\u0440\ufffd"
+   ]
+  },
+  "skipA": {
+   "dC_gemm_sep": {
+    "mean": 0.22696196040391292,
+    "min": 0.14451321545936574,
+    "max": 0.2436553744909683
+   },
+   "dC_gemm_merged": {
+    "mean": 0.22696196040391292,
+    "min": 0.14451321545936574,
+    "max": 0.2436553744909683
+   },
+   "dC_lineage_h3": {
+    "mean": 0.9728763981823803,
+    "min": 0.9697556500876998,
+    "max": 0.9735082566811473
+   },
+   "dC_halflayer": {
+    "mean": 0.008154889193668574,
+    "min": 0.0,
+    "max": 0.014359424668583457
+   },
+   "dC_layer": {
+    "mean": 0.3797304254466765,
+    "min": 0.3708844064639378,
+    "max": 0.4234208987722022
+   },
+   "s_flops": {
+    "mean": 0.379619604176948,
+    "min": 0.37076543411311214,
+    "max": 0.42335033567871616
+   },
+   "block_bad_frac": {
+    "N1": 0.0,
+    "QKV": 0.5,
+    "ATT": 0.0,
+    "OPROJ": 0.0,
+    "N2": 0.0,
+    "GU": 0.5,
+    "DOWN": 0.0
+   },
+   "median_max_ratio": {
+    "N1": 0.8241253654167368,
+    "QKV": 252.11822063178244,
+    "ATT": 0.29773606532759644,
+    "OPROJ": 0.7356807837582858,
+    "N2": 0.825972456206483,
+    "GU": 50.93982157611793,
+    "DOWN": 0.7531572266281954,
+    "LAYER": 7.926346989269153,
+    "ATTHALF": 0.0,
+    "MLPHALF": 0.002934008342509469,
+    "FN": 0.8375301958270526,
+    "HEAD": 0.9821390505009567
+   },
+   "sample_text": [
+    "\n-s top\n\n\n\n\n\n \n (\n grace\nReporter\n \ufffd personnel favor\n\n\uc77d\n subject\n\n traditional\n\n\n tank top top\n\n\n\n\n\n\n\n\n\n\n\n\n\n",
+    "\n\n\u69ca lui loi\n Southern\n\n drain we determined departure email\n rapidly\n\n\n harmon\n\n\n\n\n\n\n\n\n\n\n\n\n\n insider\n\n fully\n\n real este\n\n\n not land\n\n\n\n\n",
+    " \" try shuffle\n absorb detr across\u4ea4\u901a\u5b89\u5168 an\n<|endoftext|> first\u4e2d\n\n same hem t\u1ed3n\nComplex\n Quadr calculated co sens god added\u4ed1\n \u0111\u1ed5i we\n favor\n great\n if step for rides\n\n\n\n\n\n major\n"
+   ]
+  },
+  "skipB": {
+   "dC_gemm_sep": {
+    "mean": 0.0001108212697284731,
+    "min": 7.056309348601843e-05,
+    "max": 0.00011897235082566812
+   },
+   "dC_gemm_merged": {
+    "mean": 0.11348098020195646,
+    "min": 0.07225660772968287,
+    "max": 0.12182768724548415
+   },
+   "dC_lineage_h3": {
+    "mean": 0.9874707678251221,
+    "min": 0.9790483054777122,
+    "max": 0.9891760654823819
+   },
+   "dC_halflayer": {
+    "mean": 0.008154889193668574,
+    "min": 0.0,
+    "max": 0.014359424668583457
+   },
+   "dC_layer": {
+    "mean": 0.3797304254466765,
+    "min": 0.3708844064639378,
+    "max": 0.4234208987722022
+   },
+   "s_flops": {
+    "mean": 0.379619604176948,
+    "min": 0.37076543411311214,
+    "max": 0.42335033567871616
+   },
+   "block_bad_frac": {
+    "N1": 0.5,
+    "QKV": 0.0,
+    "ATT": 0.0,
+    "OPROJ": 0.0,
+    "N2": 0.5,
+    "GU": 0.0,
+    "DOWN": 0.0
+   },
+   "median_max_ratio": {
+    "N1": 127.61435959963006,
+    "QKV": 0.8408685088849328,
+    "ATT": 0.29773606532759644,
+    "OPROJ": 0.7356807837582858,
+    "N2": 127.61435959963006,
+    "GU": 0.38106907790649935,
+    "DOWN": 0.7531572266281954,
+    "LAYER": 7.926346989269153,
+    "ATTHALF": 0.0,
+    "MLPHALF": 0.002934008342509469,
+    "FN": 0.8375301958270526,
+    "HEAD": 0.9821390505009567
+   },
+   "sample_text": [
+    "\n-s top\n\n\n\n\n\n \n (\n grace\nReporter\n \ufffd personnel favor\n\n\uc77d\n subject\n\n traditional\n\n\n tank top top\n\n\n\n\n\n\n\n\n\n\n\n\n\n",
+    "\n\n\u69ca lui loi\n Southern\n\n drain we determined departure email\n rapidly\n\n\n harmon\n\n\n\n\n\n\n\n\n\n\n\n\n\n insider\n\n fully\n\n real este\n\n\n not land\n\n\n\n\n",
+    " \" try shuffle\n absorb detr across\u4ea4\u901a\u5b89\u5168 an\n<|endoftext|> first\u4e2d\n\n same hem t\u1ed3n\nComplex\n Quadr calculated co sens god added\u4ed1\n \u0111\u1ed5i we\n favor\n great\n if step for rides\n\n\n\n\n\n major\n"
+   ]
+  },
+  "kv_trunc": {
+   "dC_gemm_sep": {
+    "mean": 0.07835332714215727,
+    "min": 0.010564744753319328,
+    "max": 0.4131610249793351
+   },
+   "dC_gemm_merged": {
+    "mean": 0.07835332714215727,
+    "min": 0.010564744753319328,
+    "max": 0.4131610249793351
+   },
+   "dC_lineage_h3": {
+    "mean": 1.0,
+    "min": 1.0,
+    "max": 1.0
+   },
+   "dC_halflayer": {
+    "mean": 0.0,
+    "min": 0.0,
+    "max": 0.0
+   },
+   "dC_layer": {
+    "mean": 0.0,
+    "min": 0.0,
+    "max": 0.0
+   },
+   "s_flops": {
+    "mean": 0.07551630263710836,
+    "min": 0.007519052572182225,
+    "max": 0.411354609786093
+   },
+   "block_bad_frac": {
+    "N1": 0.0,
+    "QKV": 0.0,
+    "ATT": 1.0,
+    "OPROJ": 0.0,
+    "N2": 0.0,
+    "GU": 0.0,
+    "DOWN": 0.0
+   },
+   "median_max_ratio": {
+    "N1": 0.824041026543369,
+    "QKV": 0.92595335004958,
+    "ATT": 13630.094317593073,
+    "OPROJ": 0.88425192026271,
+    "N2": 0.8254293724152547,
+    "GU": 0.5741885853789735,
+    "DOWN": 0.900150361976412,
+    "LAYER": 0.035388767669828965,
+    "ATTHALF": 0.0,
+    "MLPHALF": 0.0001884932637068447,
+    "FN": 0.842390574442683,
+    "HEAD": 0.9770075017157135
+   },
+   "sample_text": [
+    "The role of Rayleigh scattering in the topic, is quite quite and and and and and and and and and and and and and and and and and and and and and and and and and and and and and and and And And And And",
+    "Here explained and complexity of you from we:\n\n### #### ### ### ### ### ### ### ### ### ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ** ****** 10.0.",
+    "We show your reasoning:\n\n---\n\n**************************************************\n\n## Exploring the Potential of Metadata and Information Security\n\n**Event**\n"
+   ]
+  }
+ }
+}
