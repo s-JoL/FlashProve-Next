@@ -34,7 +34,7 @@ PREAMBLE = r"""\documentclass[10pt]{article}
 def esc_text(s: str) -> str:
     out = []
     for ch in s:
-        if ch in "&%#_{}":
+        if ch in "&%#_{}$":
             out.append("\\" + ch)
         elif ch == "~":
             out.append(r"\textasciitilde{}")
@@ -62,23 +62,26 @@ def inline(s: str) -> str:
     st = s.strip()
     if st.startswith("*") and st.endswith("*") and not st.startswith("**") and len(st) > 2:
         return r"\emph{" + inline(st[1:-1]) + "}"
-    s = re.sub(r'"([^"$`]*)"', "\u201c\\1\u201d", s)
     s = s.replace(r"\$", DOLLAR)
-    parts = re.split(r"(\$[^$]+\$|`[^`]+`)", s)
-    res = []
-    for p in parts:
-        if not p:
-            continue
-        if p.startswith("$") and p.endswith("$") and len(p) > 1:
-            res.append(p)
-        elif p.startswith("`") and p.endswith("`"):
-            res.append(esc_code(p[1:-1]))
+    tokens: list[str] = []
+
+    def _stash(m: re.Match) -> str:
+        tok = m.group(0)
+        idx = len(tokens)
+        if tok.startswith("`"):
+            tokens.append(esc_code(tok[1:-1]))
         else:
-            t = esc_text(p)
-            t = re.sub(r"\*\*(.+?)\*\*", r"\\textbf{\1}", t)
-            t = re.sub(r"(?<![\w*])\*(?!\s)(.+?)(?<!\s)\*(?![\w*])", r"\\emph{\1}", t)
-            res.append(t)
-    return "".join(res).replace(DOLLAR, r"\$")
+            tokens.append(tok)
+        return f"\x01T{idx}T\x01"
+
+    s = re.sub(r"`[^`]+`|\$[^$]+\$", _stash, s)
+    s = re.sub(r'"([^"]*)"', "\u201c\\1\u201d", s)
+    t = esc_text(s)
+    t = re.sub(r"\*\*(.+?)\*\*", r"\\textbf{\1}", t)
+    t = re.sub(r"(?<![\w*])\*(?!\s)(.+?)(?<!\s)\*(?![\w*])", r"\\emph{\1}", t)
+    for idx, val in enumerate(tokens):
+        t = t.replace(f"\x01T{idx}T\x01", val)
+    return t.replace(DOLLAR, r"\$")
 
 
 def split_row(line: str):

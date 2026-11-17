@@ -4,6 +4,11 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Protocol Specifications (01–10) — FlashProve-Next</title>
+  <meta name="description" content="Complete protocol specifications (Specs 01–10) for FlashProve-Next: verifiable zero-knowledge inference for closed-weight production LLM APIs." />
+  <meta property="og:title" content="Protocol Specifications (01–10) — FlashProve-Next" />
+  <meta property="og:description" content="Complete protocol specifications (Specs 01–10) for FlashProve-Next: soundness, zero knowledge, certified FP rounding, model commitment, and trace commitment." />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://s-jol.github.io/FlashProve-Next/specs.html" />
   <style>
     :root {
       --bg: #f8fafc;
@@ -139,7 +144,7 @@
         <div>
           <div class="card-num">SPEC 02 · SOUNDNESS</div>
           <h3><span class="en">Lifetime Knowledge Soundness</span><span class="zh">全生命周期防伪造与抽查次数计算</span></h3>
-          <p><span class="en">Straight-line witness extraction, round-by-round analysis across <code>2^64</code> adaptive queries, cubic extension field <code>F_{p^3}</code> bounds, and the exact <code>k = 105 / 315</code> sample-count formula.</span><span class="zh">给出无需重绕的见证提取器、覆盖 <code>2^64</code> 次查询的逐轮防刷分析、三次扩域 <code>F_{p^3}</code> 门槛，以及每池 105 次（共 315 次）抽查公式。</span></p>
+          <p><span class="en">Straight-line witness extraction, round-by-round analysis across <code>2^64</code> adaptive queries, cubic extension field 𝔽<sub>p</sub><sup>3</sup> bounds, and the exact <code>k = 105 / 315</code> sample-count formula.</span><span class="zh">给出无需重绕的见证提取器、覆盖 <code>2^64</code> 次查询的逐轮可靠性分析（抗自适应反复试算）、三次扩域 𝔽<sub>p</sub><sup>3</sup> 门槛，以及每池 105 次（共 315 次）抽查公式。</span></p>
         </div>
         <a class="file-link" target="_blank" rel="noopener" href="https://github.com/s-JoL/FlashProve-Next/blob/main/specs/02-soundness.md">specs/02-soundness.md →</a>
       </div>
@@ -166,7 +171,7 @@
         <div>
           <div class="card-num">SPEC 05 · COMPUTATION</div>
           <h3><span class="en">Production Engines, Architectures &amp; APIs</span><span class="zh">主流模型架构、加速机制与商业 API 兼容</span></h3>
-          <p><span class="en">Covers Dense GQA, Sparse MoE, MLA, chunked linear attention, continuous batching, prefix caching, TP/PP/EP, P/D disaggregation, coupled speculative decoding, and OpenAI/Anthropic API semantics.</span><span class="zh">覆盖稠密 GQA、稀疏 MoE、MLA、分块线性注意力，以及连续批处理、前缀缓存、多卡并行、P/D 分离、耦合投机解码与商业 API 语义。</span></p>
+          <p><span class="en">Covers Dense GQA, Sparse MoE, MLA, chunked linear attention, continuous batching, prefix caching, TP/PP/EP, P/D disaggregation, coupled speculative decoding, and OpenAI/Anthropic API semantics (including minimal byte-DFA JSON Schema constrained decoding).</span><span class="zh">覆盖稠密 GQA、稀疏 MoE、MLA、分块线性注意力，以及连续批处理、前缀缓存、多卡并行、P/D 分离、耦合投机解码与商业 API 语义（含零词表膨胀的 JSON Schema 字节自动机约束解码）。</span></p>
         </div>
         <a class="file-link" target="_blank" rel="noopener" href="https://github.com/s-JoL/FlashProve-Next/blob/main/specs/05-computation-model.md">specs/05-computation-model.md →</a>
       </div>
@@ -184,7 +189,7 @@
         <div>
           <div class="card-num">SPEC 07 · ASSUMPTIONS &amp; LEAN</div>
           <h3><span class="en">Assumptions, Dependency Graph &amp; Lean Map</span><span class="zh">全部前提假设、依赖关系图与 Lean 对应表</span></h3>
-          <p><span class="en">Lists all 30 cryptographic, numerical, engineering, and scope assumptions with a full dependency graph, showing soundness relies purely on cryptography and mapping all 18 Lean modules.</span><span class="zh">完整列出 30 项密码学、数值、工程与边界前提及其依赖图，证明防伪造可靠性仅依赖密码学假设，并逐项对应 18 个 Lean 模块。</span></p>
+          <p><span class="en">Lists all 30 cryptographic, numerical, engineering, and scope assumptions with a full dependency graph, showing soundness depends only on cryptographic assumptions and protocol obligations (never on kernel rounding contracts) and mapping all 19 Lean modules.</span><span class="zh">完整列出 30 项密码学、数值、工程与边界前提及其依赖图，证明防伪造只依赖密码学假设与协议实现义务（与算子数值合约无关），并逐项对应 19 个 Lean 模块。</span></p>
         </div>
         <a class="file-link" target="_blank" rel="noopener" href="https://github.com/s-JoL/FlashProve-Next/blob/main/specs/07-assumptions-and-lean.md">specs/07-assumptions-and-lean.md →</a>
       </div>

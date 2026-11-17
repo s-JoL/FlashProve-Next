@@ -1,5 +1,5 @@
 /-
-Coupled keyed speculative decoding equivalence (`specs/05-computation-model.md` §3.5).
+Coupled keyed speculative decoding equivalence (`specs/05-computation-model.md` §3.3).
 
 When the committed keyed sampling rule determines a deterministic step transition `tgt : List α → α`
 for fixed `(K_prf, nonce)` and logical step position `ctx.length`, multi-round speculative verification

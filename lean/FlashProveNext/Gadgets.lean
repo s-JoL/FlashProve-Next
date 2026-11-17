@@ -1,5 +1,5 @@
 /-
-Symmetric saturation uniqueness and certified MoE Top-K routing bounds (`specs/06-tolerance-and-cheats.md` §3.6).
+Symmetric saturation uniqueness and certified MoE Top-K routing bounds (`specs/06-tolerance-and-cheats.md` §3.3).
 
 1. `sat_iff`, `sat_existsUnique`          : symmetric clamping `SatRel A y` admits a unique witness `(ys, ep, en)`;
 2. `approxTopK_sound`, `approxTopK_of_float` : uniform `δ`-band Top-K completeness and total-score proximity;
@@ -128,7 +128,7 @@ theorem approxTopK_of_float (s sh : Fin E → ℤ) (δ : ℤ) {K : ℕ} {S : Fin
   have a4 := neg_abs_le (s j - sh j)
   linarith
 
-/-- Componentwise pairwise-band MoE routing relation (`specs/06` §3.6). -/
+/-- Componentwise pairwise-band MoE routing relation (`specs/06` §3.3). -/
 def IsPairwiseApproxTopK (s r : Fin E → ℤ) (K : ℕ) (S : Finset (Fin E)) : Prop :=
   S.card = K ∧ ∀ e ∈ S, ∀ e' ∉ S, s e + r e ≥ s e' - r e'
 

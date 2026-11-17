@@ -1,0 +1,479 @@
+{
+  "model": "Qwen3-0.6B",
+  "machine": "NVIDIA RTX 4070 Ti SUPER (16 GB VRAM) + Intel Core i7-14700F (28 threads, 25 GB RAM)",
+  "vllm_version": "0.33",
+  "profile": "qwen3-0.6b-demo",
+  "security_tier": "demo_fast",
+  "M_C": 4,
+  "M_G": 2,
+  "T_pad": 256,
+  "edim": 3,
+  "basefold_queries": 150,
+  "cases": {
+    "concurrent_streaming_cudagraph": {
+      "pass": true,
+      "max_cobatch": 4,
+      "full_cudagraph_replays": 11,
+      "nonblocking_probe_during_proving_s": 0.2113,
+      "requests": [
+        {
+          "pass": true,
+          "proof_id": "b136427a4a24d5237d5e8709eaaa500b",
+          "proof_bytes": 9533159,
+          "proof_wait_s": 361.805,
+          "verify_cpu_s": 5.424,
+          "verdict": "VERIFIED",
+          "finish_reason": "stop",
+          "n_req": 21,
+          "n_reason": 0,
+          "n_vis": 9,
+          "operator_meta": {
+            "T": 43,
+            "n_req": 21,
+            "n_reason": 0,
+            "n_vis": 9,
+            "finish_reason": "stop",
+            "generate_s": 1.5731,
+            "max_cobatch": 4,
+            "cg_modes": {
+              "NONE": 1,
+              "FULL": 9
+            },
+            "prefix_cache_hits": 16,
+            "full_graph_replays_total": 9,
+            "py_port_calls_by_mode": {
+              "NONE": 510,
+              "FULL": 0
+            }
+          },
+          "ttft_s": 1.216,
+          "reply_s": 2.5542
+        },
+        {
+          "pass": true,
+          "proof_id": "63bca4d0885761f8e30d5179caa4ccaa",
+          "proof_bytes": 9536559,
+          "proof_wait_s": 0.068,
+          "verify_cpu_s": 5.421,
+          "verdict": "VERIFIED",
+          "finish_reason": "stop",
+          "n_req": 20,
+          "n_reason": 0,
+          "n_vis": 10,
+          "operator_meta": {
+            "T": 43,
+            "n_req": 20,
+            "n_reason": 0,
+            "n_vis": 10,
+            "finish_reason": "stop",
+            "generate_s": 1.5423,
+            "max_cobatch": 4,
+            "cg_modes": {
+              "NONE": 2,
+              "FULL": 9
+            },
+            "prefix_cache_hits": 0,
+            "full_graph_replays_total": 9,
+            "py_port_calls_by_mode": {
+              "NONE": 510,
+              "FULL": 0
+            }
+          },
+          "ttft_s": 1.1481,
+          "reply_s": 2.5538
+        },
+        {
+          "pass": true,
+          "proof_id": "199f6bb5553762909f18c01ece9b33b6",
+          "proof_bytes": 9547533,
+          "proof_wait_s": 0.092,
+          "verify_cpu_s": 5.476,
+          "verdict": "VERIFIED",
+          "finish_reason": "stop",
+          "n_req": 21,
+          "n_reason": 0,
+          "n_vis": 4,
+          "operator_meta": {
+            "T": 38,
+            "n_req": 21,
+            "n_reason": 0,
+            "n_vis": 4,
+            "finish_reason": "stop",
+            "generate_s": 1.4548,
+            "max_cobatch": 4,
+            "cg_modes": {
+              "NONE": 1,
+              "FULL": 4
+            },
+            "prefix_cache_hits": 16,
+            "full_graph_replays_total": 5,
+            "py_port_calls_by_mode": {
+              "NONE": 510,
+              "FULL": 0
+            }
+          },
+          "ttft_s": 1.2157,
+          "reply_s": 2.5468
+        },
+        {
+          "pass": true,
+          "proof_id": "bd0f06ec7df1e687c98f1503e94882ad",
+          "proof_bytes": 9552287,
+          "proof_wait_s": 106.314,
+          "verify_cpu_s": 5.563,
+          "verdict": "VERIFIED",
+          "finish_reason": "stop",
+          "n_req": 20,
+          "n_reason": 0,
+          "n_vis": 11,
+          "operator_meta": {
+            "T": 44,
+            "n_req": 20,
+            "n_reason": 0,
+            "n_vis": 11,
+            "finish_reason": "stop",
+            "generate_s": 1.6313,
+            "max_cobatch": 4,
+            "cg_modes": {
+              "NONE": 1,
+              "FULL": 11
+            },
+            "prefix_cache_hits": 16,
+            "full_graph_replays_total": 11,
+            "py_port_calls_by_mode": {
+              "NONE": 510,
+              "FULL": 0
+            }
+          },
+          "ttft_s": 1.2153,
+          "reply_s": 2.5539
+        }
+      ],
+      "probe": {
+        "pass": true,
+        "proof_id": "2f522a63b0cda4504f754e518c36d26e",
+        "proof_bytes": 9566827,
+        "proof_wait_s": 118.293,
+        "verify_cpu_s": 4.858,
+        "verdict": "VERIFIED",
+        "finish_reason": "length",
+        "n_req": 15,
+        "n_reason": 0,
+        "n_vis": 4,
+        "operator_meta": {
+          "T": 32,
+          "n_req": 15,
+          "n_reason": 0,
+          "n_vis": 4,
+          "finish_reason": "length",
+          "generate_s": 0.0806,
+          "max_cobatch": 1,
+          "cg_modes": {
+            "PIECEWISE": 1,
+            "FULL": 3
+          },
+          "prefix_cache_hits": 16,
+          "full_graph_replays_total": 14,
+          "py_port_calls_by_mode": {
+            "NONE": 510,
+            "FULL": 0,
+            "PIECEWISE": 0
+          }
+        }
+      }
+    },
+    "prefix_cache_reuse": {
+      "pass": true,
+      "prefix_cache_hits_tokens": 48,
+      "req1": {
+        "pass": true,
+        "proof_id": "3e1ca8d6ea7545e57cc739aa008a4aa0",
+        "proof_bytes": 9533744,
+        "proof_wait_s": 117.266,
+        "verify_cpu_s": 5.463,
+        "verdict": "VERIFIED",
+        "finish_reason": "length",
+        "n_req": 59,
+        "n_reason": 0,
+        "n_vis": 8,
+        "operator_meta": {
+          "T": 80,
+          "n_req": 59,
+          "n_reason": 0,
+          "n_vis": 8,
+          "finish_reason": "length",
+          "generate_s": 0.8054,
+          "max_cobatch": 1,
+          "cg_modes": {
+            "NONE": 1,
+            "FULL": 7
+          },
+          "prefix_cache_hits": 16,
+          "full_graph_replays_total": 21,
+          "py_port_calls_by_mode": {
+            "NONE": 765,
+            "FULL": 0,
+            "PIECEWISE": 0
+          }
+        }
+      },
+      "req2": {
+        "pass": true,
+        "proof_id": "a4d96af32fe30b2279c0babc004de6aa",
+        "proof_bytes": 9543375,
+        "proof_wait_s": 118.31,
+        "verify_cpu_s": 4.84,
+        "verdict": "VERIFIED",
+        "finish_reason": "length",
+        "n_req": 57,
+        "n_reason": 0,
+        "n_vis": 8,
+        "operator_meta": {
+          "T": 78,
+          "n_req": 57,
+          "n_reason": 0,
+          "n_vis": 8,
+          "finish_reason": "length",
+          "generate_s": 0.2068,
+          "max_cobatch": 1,
+          "cg_modes": {
+            "NONE": 1,
+            "FULL": 7
+          },
+          "prefix_cache_hits": 48,
+          "full_graph_replays_total": 28,
+          "py_port_calls_by_mode": {
+            "NONE": 1020,
+            "FULL": 0,
+            "PIECEWISE": 0
+          }
+        }
+      }
+    },
+    "hidden_sys_cot_eos_stop": {
+      "pass": true,
+      "proof_id": "43d7b5cdc01d2746ea024717eca12bd3",
+      "proof_bytes": 9544751,
+      "proof_wait_s": 126.277,
+      "verify_cpu_s": 4.663,
+      "verdict": "VERIFIED",
+      "finish_reason": "stop",
+      "n_req": 15,
+      "n_reason": 63,
+      "n_vis": 9,
+      "operator_meta": {
+        "T": 100,
+        "n_req": 15,
+        "n_reason": 63,
+        "n_vis": 9,
+        "finish_reason": "stop",
+        "generate_s": 0.8468,
+        "max_cobatch": 1,
+        "cg_modes": {
+          "PIECEWISE": 1,
+          "FULL": 72
+        },
+        "prefix_cache_hits": 16,
+        "full_graph_replays_total": 100,
+        "py_port_calls_by_mode": {
+          "NONE": 1020,
+          "FULL": 0,
+          "PIECEWISE": 0
+        }
+      }
+    },
+    "multiturn_state_chain": {
+      "pass": true,
+      "turn1": {
+        "pass": true,
+        "proof_id": "1cbe37a94277d79d7e1cfe5b0b6ce403",
+        "proof_bytes": 9531521,
+        "proof_wait_s": 125.291,
+        "verify_cpu_s": 4.766,
+        "verdict": "VERIFIED",
+        "finish_reason": "stop",
+        "n_req": 43,
+        "n_reason": 0,
+        "n_vis": 8,
+        "operator_meta": {
+          "T": 127,
+          "n_req": 43,
+          "n_reason": 0,
+          "n_vis": 8,
+          "finish_reason": "stop",
+          "generate_s": 0.5505,
+          "max_cobatch": 1,
+          "cg_modes": {
+            "NONE": 1,
+            "FULL": 8
+          },
+          "prefix_cache_hits": 0,
+          "full_graph_replays_total": 108,
+          "py_port_calls_by_mode": {
+            "NONE": 1275,
+            "FULL": 0,
+            "PIECEWISE": 0
+          }
+        }
+      },
+      "wrong_st_prev_rejected": "REJECTED: statement St_prev != client's stored state anchor"
+    },
+    "constrained_json_schema": {
+      "pass": true,
+      "proof_id": "8484855ef0d6067d63bc8818b47550f5",
+      "proof_bytes": 9732743,
+      "proof_wait_s": 124.281,
+      "verify_cpu_s": 5.377,
+      "verdict": "VERIFIED",
+      "finish_reason": "stop",
+      "n_req": 19,
+      "n_reason": 0,
+      "n_vis": 12,
+      "operator_meta": {
+        "T": 44,
+        "n_req": 19,
+        "n_reason": 0,
+        "n_vis": 12,
+        "finish_reason": "stop",
+        "generate_s": 0.4293,
+        "max_cobatch": 1,
+        "cg_modes": {
+          "PIECEWISE": 1,
+          "FULL": 12
+        },
+        "prefix_cache_hits": 16,
+        "full_graph_replays_total": 120,
+        "py_port_calls_by_mode": {
+          "NONE": 1275,
+          "FULL": 0,
+          "PIECEWISE": 0
+        }
+      },
+      "parsed_json": {
+        "city": "Paris",
+        "capital": true
+      }
+    },
+    "tool_calls_and_witness": {
+      "pass": true,
+      "client_tool_use": {
+        "pass": true,
+        "proof_id": "3ef0e456248c55ab7e31553d1d4ba4d9",
+        "proof_bytes": 9769191,
+        "proof_wait_s": 124.28,
+        "verify_cpu_s": 5.274,
+        "verdict": "VERIFIED",
+        "finish_reason": "tool_use",
+        "n_req": 25,
+        "n_reason": 0,
+        "n_vis": 26,
+        "operator_meta": {
+          "T": 64,
+          "n_req": 25,
+          "n_reason": 0,
+          "n_vis": 26,
+          "finish_reason": "tool_use",
+          "generate_s": 0.3881,
+          "max_cobatch": 1,
+          "cg_modes": {
+            "NONE": 1,
+            "FULL": 26
+          },
+          "prefix_cache_hits": 16,
+          "full_graph_replays_total": 146,
+          "py_port_calls_by_mode": {
+            "NONE": 1530,
+            "FULL": 0,
+            "PIECEWISE": 0
+          }
+        }
+      },
+      "server_tool_committed_witness": {
+        "pass": true,
+        "proof_id": "434980a7a480b0dfa953cdfcdc840f9b",
+        "proof_bytes": 9722536,
+        "proof_wait_s": 127.317,
+        "verify_cpu_s": 5.205,
+        "verdict": "VERIFIED",
+        "finish_reason": "stop",
+        "n_req": 27,
+        "n_reason": 0,
+        "n_vis": 17,
+        "operator_meta": {
+          "T": 114,
+          "n_req": 27,
+          "n_reason": 0,
+          "n_vis": 17,
+          "finish_reason": "stop",
+          "generate_s": 0.6859,
+          "max_cobatch": 1,
+          "cg_modes": {
+            "NONE": 1,
+            "FULL": 25
+          },
+          "prefix_cache_hits": 16,
+          "full_graph_replays_total": 188,
+          "py_port_calls_by_mode": {
+            "NONE": 2040,
+            "FULL": 0,
+            "PIECEWISE": 0
+          }
+        }
+      }
+    },
+    "max_tokens_zero": {
+      "pass": true,
+      "proof_id": "d490b39327364cd80f5d740e253cf7a8",
+      "proof_bytes": 7287396,
+      "proof_wait_s": 91.212,
+      "verify_cpu_s": 2.85,
+      "verdict": "VERIFIED",
+      "finish_reason": "length",
+      "n_req": 19,
+      "n_reason": 0,
+      "n_vis": 0,
+      "operator_meta": {
+        "T": 32,
+        "n_req": 19,
+        "n_reason": 0,
+        "n_vis": 0,
+        "finish_reason": "length",
+        "generate_s": 0.1157,
+        "max_cobatch": 1,
+        "cg_modes": {
+          "PIECEWISE": 1
+        },
+        "prefix_cache_hits": 16,
+        "full_graph_replays_total": 188,
+        "py_port_calls_by_mode": {
+          "NONE": 2040,
+          "FULL": 0,
+          "PIECEWISE": 0
+        }
+      }
+    },
+    "custom_stop_public_refusal": {
+      "pass": true,
+      "fpn": {
+        "provable": false,
+        "model_id": "603a277c0528f2e8cc5d1cf9d6371d64bcf6418713ebdc8e8697133b27587ab7",
+        "proof_id": null,
+        "refusal_reason": "unsupported_public_policy:custom_stop_sequence"
+      }
+    },
+    "downgraded_int4_rejected": {
+      "pass": true,
+      "http_status": 409,
+      "standalone_verifier": "REJECTED: sumcheck round mismatch (cube 2^12)"
+    }
+  },
+  "setup": {
+    "model_id": "603a277c0528f2e8cc5d1cf9d6371d64bcf6418713ebdc8e8697133b27587ab7",
+    "commit_w_s": 0.0,
+    "n_rows": 872
+  },
+  "server_boot_s": 19.03,
+  "all_pass": true,
+  "peak_vram_gib": 8.897,
+  "peak_host_used_gib": 17.394
+}

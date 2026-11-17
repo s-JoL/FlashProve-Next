@@ -4,6 +4,11 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>FlashProve-Next — Verifiable Inference for Production LLM APIs</title>
+  <meta name="description" content="Publicly verifiable zero-knowledge proofs for closed-weight LLM APIs—unchanged native-FP serving (vLLM + CUDA Graphs), private weights/architecture/CoT, Lean 4 soundness proofs, and seconds-scale CPU verification." />
+  <meta property="og:title" content="FlashProve-Next — Verifiable Inference for Production LLM APIs" />
+  <meta property="og:description" content="Publicly verifiable zero-knowledge proofs for closed-weight LLM APIs—unchanged native-FP serving, private weights/architecture/CoT, 19 Lean 4 modules, and seconds-scale CPU verification." />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://s-jol.github.io/FlashProve-Next/" />
   <style>
     :root {
       --bg: #f8fafc;
@@ -146,9 +151,9 @@
       margin: 0 0 24px;
     }
     .notice-banner {
-      background: var(--amber-soft);
-      border: 1px solid #fde68a;
-      color: #78350f;
+      background: #f0fdf4;
+      border: 1px solid #bbf7d0;
+      color: #14532d;
       border-radius: 12px;
       padding: 14px 18px;
       font-size: 0.94rem;
@@ -185,7 +190,7 @@
     }
     .metrics-strip {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
       gap: 14px;
     }
     .metric-card {
@@ -195,13 +200,13 @@
       padding: 16px 18px;
     }
     .metric-val {
-      font-size: 1.45rem;
+      font-size: 1.42rem;
       font-weight: 700;
       letter-spacing: -0.02em;
       color: var(--ink);
     }
     .metric-label {
-      font-size: 0.85rem;
+      font-size: 0.84rem;
       color: var(--muted);
       margin-top: 4px;
     }
@@ -257,6 +262,20 @@
     .pill.wip { background: var(--cobalt-soft); color: var(--cobalt); }
     .pill.plan { background: var(--surface-alt); color: var(--muted); }
     .pill.warn { background: var(--rose-soft); color: var(--rose); }
+    .terminal-card {
+      background: #0f172a;
+      color: #e2e8f0;
+      border-radius: 14px;
+      padding: 20px 24px;
+      font-family: var(--mono);
+      font-size: 0.85rem;
+      line-height: 1.62;
+      overflow-x: auto;
+      border: 1px solid #1e293b;
+    }
+    .terminal-card .t-dim { color: #94a3b8; }
+    .terminal-card .t-ok { color: #34d399; font-weight: 700; }
+    .terminal-card .t-bad { color: #fb7185; font-weight: 700; }
     table {
       width: 100%;
       border-collapse: collapse;
@@ -310,15 +329,15 @@
     <div class="container nav">
       <div class="brand">
         <span>FlashProve-Next</span>
-        <span class="brand-tag en">Stage 0 · v0.2.0</span>
-        <span class="brand-tag zh">Stage 0 · v0.2.0</span>
+        <span class="brand-tag en">Stage 1 · v0.3.0</span>
+        <span class="brand-tag zh">Stage 1 · v0.3.0</span>
       </div>
       <nav class="nav-links">
-        <a href="#evolution"><span class="en">Why FlashProve-Next</span><span class="zh">解决什么问题</span></a>
+        <a href="#demo"><span class="en">CPU Demo</span><span class="zh">CPU 验证演示</span></a>
+        <a href="#evolution"><span class="en">Comparison</span><span class="zh">对比分析</span></a>
         <a href="#architecture"><span class="en">How It Works</span><span class="zh">三步工作流</span></a>
-        <a href="#roadmap"><span class="en">Stages</span><span class="zh">发布路线</span></a>
         <a href="#formal"><span class="en">Lean 4</span><span class="zh">形式化验证</span></a>
-        <a href="#benchmarks"><span class="en">Measurements</span><span class="zh">硬件实测</span></a>
+        <a href="#benchmarks"><span class="en">Measurements</span><span class="zh">实测数据</span></a>
         <a href="specs.html"><span class="en">Specs (01–10)</span><span class="zh">规范全文 (01–10)</span></a>
       </nav>
       <div class="lang-toggle" role="group" aria-label="Language switch">
@@ -332,8 +351,8 @@
     <section class="hero">
       <div class="container">
         <div class="eyebrow">
-          <span class="en">Trustless Zero-Knowledge Proofs, Unchanged Production Serving</span>
-          <span class="zh">不信服务商与硬件 · 不改现有线上推理系统</span>
+          <span class="en">Trustless Zero-Knowledge Proofs · Unchanged Production Serving</span>
+          <span class="zh">不信服务商与硬件 · 不改现有线上推理引擎</span>
         </div>
         <h1>
           <span class="en">FlashProve-Next: Verifiable Inference for Production LLM APIs</span>
@@ -345,8 +364,8 @@
         </p>
 
         <div class="notice-banner">
-          <span class="en"><strong>Current Release (`v0.2.0`, Stage 0):</strong> Publishes the technical report, ten protocol specifications (<code>specs/01–10</code>), the standalone machine-checked Lean 4.29.1 library (18 modules / 194 declarations), and GPU measurements on real checkpoints. Standalone CPU verifier binaries, example proof bundles, and non-invasive vLLM integration follow in Stage 1.</span>
-          <span class="zh"><strong>当前版本（`v0.2.0`，Stage 0）：</strong>发布英文技术论文、10 份协议规范（<code>specs/01–10</code>）、独立可编译的 Lean 4.29.1 证明库（18 个模块 / 194 条声明）以及真实模型硬件实测数据。独立 CPU 验证器程序、证明样本包与 vLLM 插件将在 Stage 1 发布。</span>
+          <span class="en"><strong>Current Release (<code>v0.3.0</code>, Stage 1):</strong> Publishes the streaming cross-slot 𝔽<sub>p</sub><sup>3</sup> prover (<code>1.51 B/cell</code>, zero disk spill), full unsliced <code>Qwen3-0.6B</code> setup &amp; 315-draw reply proofs (<code>12.02 s</code> CPU verify), standalone CPU verifier CLI (<code>fpn-verify</code>), offline laptop demo bundles, non-invasive <code>vLLM 0.33</code> CUDA-graph integration, 19 machine-checked Lean 4.29.1 modules (219 declarations), and the updated technical report.</span>
+          <span class="zh"><strong>当前版本（<code>v0.3.0</code>，Stage 1）：</strong>发布 𝔽<sub>p</sub><sup>3</sup> 流式跨槽证明器（<code>1.51 B/格</code>、零落盘）、完整未裁切 <code>Qwen3-0.6B</code> 设置证明与 315 次抽查回复证明（纯 CPU 验证 <code>12.02 s</code>）、独立验证器 <code>fpn-verify</code>、离线笔记本体验包、无侵入 <code>vLLM 0.33</code> 闭环原型、19 个 Lean 4.29.1 机检模块（219 条声明）及同步更新的英文技术论文。</span>
         </div>
 
         <div class="cta-row">
@@ -354,49 +373,81 @@
             <span class="en">Read Technical Report (PDF)</span>
             <span class="zh">阅读英文技术论文（PDF）</span>
           </a>
+          <a class="btn" href="#demo">
+            <span class="en">Verify Proofs on Laptop CPU</span>
+            <span class="zh">笔记本纯 CPU 验证演示</span>
+          </a>
           <a class="btn" href="specs.html">
-            <span class="en">Browse Specifications (01–10)</span>
-            <span class="zh">阅读协议规范（01–10）</span>
+            <span class="en">Specifications (01–10)</span>
+            <span class="zh">协议规范（01–10）</span>
           </a>
-          <a class="btn" href="https://github.com/s-JoL/FlashProve-Next/blob/main/lean/THEOREM.md" target="_blank" rel="noopener">
-            <span class="en">Lean 4 Proofs</span>
-            <span class="zh">Lean 4 定理清单</span>
-          </a>
-          <a class="btn" href="https://github.com/s-JoL/FlashProve-Next/blob/main/benchmarks/certified/README.md" target="_blank" rel="noopener">
-            <span class="en">GPU Measurements</span>
-            <span class="zh">硬件实测数据</span>
+          <a class="btn" href="https://github.com/s-JoL/FlashProve-Next/blob/main/REVIEW.md" target="_blank" rel="noopener">
+            <span class="en">Reviewer Guide</span>
+            <span class="zh">审阅指南</span>
           </a>
         </div>
 
         <div class="metrics-strip">
           <div class="metric-card">
-            <div class="metric-val">18 / 194</div>
+            <div class="metric-val">12.02 s CPU</div>
             <div class="metric-label">
-              <span class="en">Lean 4.29.1 modules / declarations (zero <code>sorry</code>, standard axioms only)</span>
-              <span class="zh">Lean 4.29.1 模块 / 定理声明（零 <code>sorry</code>，仅用标准公理）</span>
+              <span class="en">Standalone CPU verify on full 315-draw <code>Qwen3-0.6B</code> proof (5.25B cells, <code>1.51 B/cell</code> RAM)</span>
+              <span class="zh">完整 <code>Qwen3-0.6B</code> 全安全 315 抽查证明（52.5 亿格，<code>1.51 B/格</code> 内存）纯 CPU 验证耗时</span>
             </div>
           </div>
           <div class="metric-card">
-            <div class="metric-val">3 × 105 = 315</div>
+            <div class="metric-val">19 / 219</div>
             <div class="metric-label">
-              <span class="en">Sampled checks per reply for <code>≤ 2^-40</code> forgery bound across <code>2^64</code> queries</span>
-              <span class="zh">单条回复抽查总数（覆盖 <code>2^64</code> 次刷随机数尝试，漏网率 <code>≤ 2^-40</code>）</span>
+              <span class="en">Lean 4.29.1 modules / declarations (zero <code>sorry</code>, standard axioms only)</span>
+              <span class="zh">Lean 4.29.1 模块 / 定理声明（零 <code>sorry</code>，仅标准三条公理）</span>
             </div>
           </div>
           <div class="metric-card">
             <div class="metric-val">0 / 392,928</div>
             <div class="metric-label">
-              <span class="en">False rejections on honest native-FP blocks (Qwen3-0.6B &amp; Llama-3.2-1B)</span>
-              <span class="zh">诚实原生浮点算子块的误拒数（Qwen3-0.6B 与 Llama-3.2-1B）</span>
+              <span class="en">False rejections on honest native-FP blocks (<code>R32</code> costs 1.2%–2.7% vLLM tok/s)</span>
+              <span class="zh">诚实原生浮点算子块误拒数（<code>R32</code> 数值配置仅耗 vLLM 1.2%–2.7% 吞吐）</span>
             </div>
           </div>
           <div class="metric-card">
-            <div class="metric-val">97.3%–100%</div>
+            <div class="metric-val">33 / 33 Rejected</div>
             <div class="metric-label">
-              <span class="en">Bad-cost fraction flagged across all 8 tested cost-saving cheats</span>
-              <span class="zh">8 类常见省算力作弊手段被标记出的违规成本比例</span>
+              <span class="en">White-box forgery &amp; tamper checks (<code>test_reply_zk</code> + <code>test_api_zk</code>) plus live <code>int4</code> servers</span>
+              <span class="zh">33 项白盒伪造与篡改测试及在线 <code>int4</code> 量化降级服务端全部拦截拒绝</span>
             </div>
           </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="demo">
+      <div class="container">
+        <h2>
+          <span class="en">Verify Real <code>Qwen3-0.6B</code> Proofs on a Laptop CPU</span>
+          <span class="zh">在笔记本纯 CPU 上核验真实 <code>Qwen3-0.6B</code> 证明</span>
+        </h2>
+        <p class="section-lead">
+          <span class="en">No GPU, no PyTorch, and no model weights needed. Bundled proofs in <code>demo/bundles/</code> come from unsliced <code>Qwen3-0.6B</code> on live <code>vLLM 0.33</code> using the compact <code>qwen3-0.6b-demo</code> profile (<code>4 + 2</code> draws, <code>--allow-reduced-security</code>; full <code>2^-40</code> soundness uses <code>qwen3-0.6b-sec315</code> with <code>210 + 105</code> draws).</span>
+          <span class="zh">无需显卡、无需安装 PyTorch、无需下载模型权重。<code>demo/bundles/</code> 中的真实证明包产自在线 <code>vLLM 0.33</code> + 完整未裁切 <code>Qwen3-0.6B</code>，采用轻量的 <code>qwen3-0.6b-demo</code> 演示档（<code>4 + 2</code> 抽查，需显式加 <code>--allow-reduced-security</code>；完整 <code>2^-40</code> 可靠性使用 <code>210 + 105</code> 抽查的 <code>qwen3-0.6b-sec315</code> 档）。</span>
+        </p>
+
+        <div class="terminal-card">
+          <div><span class="t-dim"># Sample run on Intel i7-14700F (CUDA_VISIBLE_DEVICES="")</span></div>
+          <div><span class="t-dim">$</span> pip install -e ".[tokenizers]" &amp;&amp; python -m flashprove_next.build_ext</div>
+          <div><span class="t-dim">$</span> python demo/run_demo.py</div>
+          <div class="t-dim">==============================================================================</div>
+          <div>FlashProve-Next — Standalone CPU Verification Demo (CUDA_VISIBLE_DEVICES="")</div>
+          <div class="t-dim">  Profile &amp; tier   : qwen3-0.6b-demo [demo_fast: M_C=4, M_G=2, T_pad=256]</div>
+          <div style="margin-top:8px;">[1/5] Honest Turn-0 Qwen3-0.6B reply (hidden system prompt + 95 hidden CoT tokens)</div>
+          <div>      Proof size    : 10.13 MiB  |  CPU verify: 4.79 s  -&gt;  <span class="t-ok">VERIFIED</span></div>
+          <div style="margin-top:6px;">[2/5] Honest Turn-1 multi-turn continuation (chaining verified anchor St_prev -&gt; St_new)</div>
+          <div>      Proof size    : 10.14 MiB  |  CPU verify: 4.68 s  -&gt;  <span class="t-ok">VERIFIED</span></div>
+          <div style="margin-top:6px;">[3/5] Honest Qwen3-0.6B structured output (strict JSON Schema byte-DFA mask bound over F_{p^3})</div>
+          <div>      Proof size    : 10.33 MiB  |  CPU verify: 5.07 s  -&gt;  <span class="t-ok">VERIFIED</span></div>
+          <div style="margin-top:6px;">[4/5] Dishonest provider serving int4-quantized Qwen3-0.6B under the committed bf16 model_id</div>
+          <div>      CPU verify    : 3.09 s  -&gt;  <span class="t-bad">REJECTED: sumcheck round mismatch (cube 2^12)</span></div>
+          <div style="margin-top:6px;">[5/5] Security-downgrade, replay, and tampering checks (no opt-in / token / nonce / St_prev / schema)</div>
+          <div>      All 5 checks  -&gt;  <span class="t-bad">REJECTED</span>  |  ALL DEMO VERIFICATIONS PASSED in 20.7 s</div>
         </div>
       </div>
     </section>
@@ -404,12 +455,12 @@
     <section id="evolution">
       <div class="container">
         <h2>
-          <span class="en">Moving Beyond FlashProve to Production APIs</span>
-          <span class="zh">从 FlashProve 走向真实生产 API</span>
+          <span class="en">How FlashProve-Next Differs from FlashProve</span>
+          <span class="zh">与 FlashProve 的设计对比</span>
         </h2>
         <p class="section-lead">
-          <span class="en">Anthropic's FlashProve demonstrated that zero-knowledge proofs can verify a closed-weight 400B MoE model without hardware enclaves. FlashProve-Next removes the barriers that keep full-layer integer-surrogate proving out of live production serving.</span>
-          <span class="zh">Anthropic 的 FlashProve 证明了不靠硬件飞地（TEE）也能验证 400B 闭源模型，但它采用的“定点整数替身 + 全层重算”没法直接搬上生产服务。FlashProve-Next 针对线上真实部署逐一消除了这些障碍。</span>
+          <span class="en">Anthropic's FlashProve demonstrated that zero-knowledge proofs can verify a closed-weight 400B MoE model without hardware enclaves. FlashProve-Next addresses the structural gaps that keep full-layer integer-surrogate proving out of live API serving.</span>
+          <span class="zh">Anthropic 的 FlashProve 证明了不靠硬件飞地（TEE）也能验证 400B 闭源模型，但其采用的“定点整数替身 + 全层重算”难以直接用于在线服务。FlashProve-Next 针对这些障碍给出了对应设计。</span>
         </p>
 
         <table>
@@ -422,14 +473,14 @@
           </thead>
           <tbody>
             <tr>
-              <td><strong><span class="en">What is committed</span><span class="zh">承诺的是真模型吗？</span></strong></td>
-              <td><span class="en">A 4-bit deterministic integer surrogate (0 of 96 native-FP replies matched its exact policy)</span><span class="zh">4-bit 确定性整数替身模型（线上原生浮点跑出的 96 条诚实回复 0 条能过精确匹配）</span></td>
+              <td><strong><span class="en">What is committed</span><span class="zh">承诺对象</span></strong></td>
+              <td><span class="en">A 4-bit deterministic integer surrogate model; native floating-point serving diverges from its exact-match policy</span><span class="zh">4-bit 确定性整数替身模型；线上原生浮点推理会偏离其精确匹配策略</span></td>
               <td><span class="en">The actual deployed checkpoint (<code>bf16</code>/<code>fp8</code>), operator rounding bounds, hidden prompts &amp; key</span><span class="zh">线上实际加载的真实权重（<code>bf16</code>/<code>fp8</code>）、算子舍入规则、隐藏提示词与采样密钥</span></td>
             </tr>
             <tr>
-              <td><strong><span class="en">How serving runs</span><span class="zh">推理引擎受限制吗？</span></strong></td>
-              <td><span class="en">Greedy / fixed-seed integer execution; vLLM stopped during full-size proving</span><span class="zh">只能跑贪心或固定种子整数解码；跑全尺寸证明时需先停掉 vLLM</span></td>
-              <td><span class="en">Unchanged production serving (native FP, random sampling, FlashAttention, CUDA Graph, TP/PP/EP, speculative)</span><span class="zh">零侵入现有引擎（原生浮点、随机采样、FlashAttention、CUDA Graph、批处理、并行、投机解码照常跑）</span></td>
+              <td><strong><span class="en">How serving runs</span><span class="zh">线上推理方式</span></strong></td>
+              <td><span class="en">Greedy or fixed-seed integer execution across all layers</span><span class="zh">仅限贪心或固定种子确定性整数逐层执行</span></td>
+              <td><span class="en">Unchanged serving (native FP, random sampling, FlashAttention, CUDA Graph, continuous batching, prefix caching)</span><span class="zh">零侵入现有引擎（原生浮点、随机采样、FlashAttention、CUDA Graph、连续批处理、前缀缓存照常跑）</span></td>
             </tr>
             <tr>
               <td><strong><span class="en">What stays secret</span><span class="zh">商业机密保护范围</span></strong></td>
@@ -437,14 +488,14 @@
               <td><span class="en">Weights, depth, width, MoE/MLA/linear-attention layout, precision, hidden prompts, hidden CoT &amp; multi-turn state</span><span class="zh">权重、层数、宽度、MoE 路由拓扑、精度格式、隐藏系统提示词、隐藏思维链与多轮加密状态全部隐藏</span></td>
             </tr>
             <tr>
-              <td><strong><span class="en">Commitment lifetime</span><span class="zh">模型承诺会过期吗？</span></strong></td>
-              <td><span class="en">Wears out after 688,127 batches and must be re-committed under an unlinked ID</span><span class="zh">最多用 688,127 个批次就会耗尽作废，必须换新 ID 重新承诺且无法公开关联</span></td>
-              <td><span class="en">Never wears out across unbounded proofs (static RS encoding + in-circuit hidden column openings)</span><span class="zh">静态编码一次，后续在电路内秘密读取列，整个服务生命周期无限次出证永不耗尽</span></td>
+              <td><strong><span class="en">Commitment lifetime</span><span class="zh">承诺寿命</span></strong></td>
+              <td><span class="en">Wears out after 688,127 batches and must be re-committed under an unlinked ID</span><span class="zh">最多用 688,127 个批次就会耗尽作废，换新 ID 后无法公开关联</span></td>
+              <td><span class="en">Does not wear out with the number of proofs (static RS encoding + in-circuit hidden column openings; soundness over <code>Q ≤ 2^64</code> queries)</span><span class="zh">出证次数不会耗尽承诺（静态编码一次 + 电路内秘密打开列；可靠性覆盖 <code>Q ≤ 2^64</code> 次查询）</span></td>
             </tr>
             <tr>
-              <td><strong><span class="en">Proving cost structure</span><span class="zh">出证成本有多高？</span></strong></td>
-              <td><span class="en">Proves every layer of every token (~72–94× per-GPU prefill time on H100)</span><span class="zh">逐层全量重证每一步计算（单卡耗时是 vLLM 预填充的 72–94 倍）</span></td>
-              <td><span class="en">Proves a fixed cost-weighted random sample (<code>3 × 105 = 315</code> draws), decoupled from model depth</span><span class="zh">按算力成本随机抽查固定数量样本（默认 315 次），开销与总层数脱钩，向常态开启推进</span></td>
+              <td><strong><span class="en">Proving cost structure</span><span class="zh">出证成本结构</span></strong></td>
+              <td><span class="en">Proves every layer of every token (≈71–93× per-GPU prefill time vs. 8×H100 FP8 vLLM)</span><span class="zh">逐层全量重证每一步计算（单张 H100 耗时约为 8×H100 FP8 vLLM 预填充的 71–93 倍）</span></td>
+              <td><span class="en">Proves a fixed cost-weighted random sample (<code>3 × 105 = 315</code> draws), decoupled from model depth</span><span class="zh">按算力成本随机抽查固定数量样本（默认 315 次），开销与总层数脱钩</span></td>
             </tr>
           </tbody>
         </table>
@@ -463,8 +514,8 @@
           <span class="zh">三步完成出证与验证</span>
         </h2>
         <p class="section-lead">
-          <span class="en">Online serving adds only lightweight read-only boundary recording; proof generation runs asynchronously in the background and never blocks token streaming.</span>
-          <span class="zh">在线服务只挂一层轻量的只读记录钩子；耗时的零知识证明全部放在回复结束后的后台异步完成，绝不卡住流式输出。</span>
+          <span class="en">Online serving adds read-only boundary recording; proof generation runs asynchronously after the reply finishes streaming.</span>
+          <span class="zh">在线服务挂接只读记录钩子；零知识证明在回复流式结束后于后台异步完成。</span>
         </p>
 
         <div class="diagram-box">
@@ -475,72 +526,103 @@
               </marker>
             </defs>
             <rect x="14" y="18" width="278" height="242" rx="12" fill="#f8fafc" stroke="#cbd5e1"/>
-            <text x="30" y="44" font-size="13" font-weight="700" fill="#0f766e">1. COMMIT ONCE (MODEL DEPLOY)</text>
             <rect x="30" y="60" width="246" height="44" rx="8" fill="#ffffff" stroke="#94a3b8"/>
-            <text x="42" y="80" font-size="12" font-weight="600" fill="#0f172a">Real Weights (bf16 / fp8)</text>
-            <text x="42" y="96" font-size="11" fill="#475569">Reed–Solomon rows + salted column tree</text>
             <line x1="153" y1="104" x2="153" y2="124" stroke="#475569" stroke-width="1.5" marker-end="url(#arrow)"/>
             <rect x="30" y="128" width="246" height="52" rx="8" fill="#ffffff" stroke="#94a3b8"/>
-            <text x="42" y="148" font-size="12" font-weight="600" fill="#0f172a">Model Config &amp; Secrets</text>
-            <text x="42" y="166" font-size="11" fill="#475569">Rounding bounds, hidden prompts, sampling key</text>
             <line x1="153" y1="180" x2="153" y2="200" stroke="#475569" stroke-width="1.5" marker-end="url(#arrow)"/>
             <rect x="30" y="204" width="246" height="42" rx="8" fill="#ccfbf1" stroke="#0f766e"/>
-            <text x="42" y="224" font-size="12" font-weight="700" fill="#0f172a">Publish model_id + Setup Proof</text>
-            <text x="42" y="238" font-size="11" fill="#0f766e">Reusable forever, zero wear per reply</text>
 
             <rect x="322" y="18" width="308" height="242" rx="12" fill="#f8fafc" stroke="#cbd5e1"/>
-            <text x="338" y="44" font-size="13" font-weight="700" fill="#1d4ed8">2. SERVE ONLINE (UNCHANGED)</text>
             <rect x="338" y="60" width="276" height="44" rx="8" fill="#ffffff" stroke="#94a3b8"/>
-            <text x="350" y="80" font-size="12" font-weight="600" fill="#0f172a">Standard API Request + Client Nonce</text>
-            <text x="350" y="96" font-size="11" fill="#475569">Optional multi-turn encrypted reasoning state</text>
             <line x1="476" y1="104" x2="476" y2="124" stroke="#475569" stroke-width="1.5" marker-end="url(#arrow)"/>
             <rect x="338" y="128" width="276" height="52" rx="8" fill="#dbeafe" stroke="#1d4ed8"/>
-            <text x="350" y="148" font-size="12" font-weight="700" fill="#0f172a">Normal Production Engine</text>
-            <text x="350" y="166" font-size="11" fill="#1e3a8a">Native FP · FlashAttention · CUDA Graph · TP/EP</text>
             <line x1="476" y1="180" x2="476" y2="200" stroke="#475569" stroke-width="1.5" marker-end="url(#arrow)"/>
             <rect x="338" y="204" width="276" height="42" rx="8" fill="#ffffff" stroke="#94a3b8"/>
-            <text x="350" y="224" font-size="12" font-weight="600" fill="#0f172a">Stream Reply + Trace Commitment R</text>
-            <text x="350" y="238" font-size="11" fill="#475569">Zero added blocking latency on token stream</text>
 
             <rect x="660" y="18" width="306" height="242" rx="12" fill="#f8fafc" stroke="#cbd5e1"/>
-            <text x="676" y="44" font-size="13" font-weight="700" fill="#0f172a">3. PROVE ASYNC &amp; VERIFY ON CPU</text>
             <rect x="676" y="60" width="274" height="56" rx="8" fill="#ffffff" stroke="#94a3b8"/>
-            <text x="688" y="80" font-size="12" font-weight="600" fill="#0f172a">Spot-Check 315 Sampled Steps/Blocks</text>
-            <text x="688" y="96" font-size="11" fill="#475569">Check local FP rounding bounds &amp; sampling</text>
-            <text x="688" y="110" font-size="11" fill="#475569">Open touched weight columns in-circuit</text>
             <line x1="813" y1="116" x2="813" y2="136" stroke="#475569" stroke-width="1.5" marker-end="url(#arrow)"/>
             <rect x="676" y="140" width="274" height="44" rx="8" fill="#ffffff" stroke="#94a3b8"/>
-            <text x="688" y="160" font-size="12" font-weight="600" fill="#0f172a">Fixed-Size Zero-Knowledge Proof</text>
-            <text x="688" y="176" font-size="11" fill="#475569">Reveals nothing beyond standard API output</text>
             <line x1="813" y1="184" x2="813" y2="204" stroke="#475569" stroke-width="1.5" marker-end="url(#arrow)"/>
             <rect x="676" y="206" width="274" height="40" rx="8" fill="#0f172a"/>
-            <text x="688" y="230" font-size="12" font-weight="700" fill="#ffffff">Any Laptop CPU Verifies in Seconds</text>
 
             <line x1="276" y1="225" x2="672" y2="225" stroke="#0f766e" stroke-dasharray="4 3" stroke-width="1.2"/>
             <line x1="614" y1="154" x2="672" y2="88" stroke="#1d4ed8" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+            <g class="en">
+              <text x="30" y="44" font-size="13" font-weight="700" fill="#0f766e">1. COMMIT ONCE (MODEL DEPLOY)</text>
+              <text x="42" y="80" font-size="12" font-weight="600" fill="#0f172a">Real Weights (bf16 / fp8)</text>
+              <text x="42" y="96" font-size="11" fill="#475569">Reed–Solomon rows + salted column tree</text>
+              <text x="42" y="148" font-size="12" font-weight="600" fill="#0f172a">Model Config &amp; Secrets</text>
+              <text x="42" y="166" font-size="11" fill="#475569">Rounding bounds, hidden prompts, sampling key</text>
+              <text x="42" y="224" font-size="12" font-weight="700" fill="#0f172a">Publish model_id + Setup Proof</text>
+              <text x="42" y="238" font-size="11" fill="#0f766e">Reused across all replies; no wear-out</text>
+
+              <text x="338" y="44" font-size="13" font-weight="700" fill="#1d4ed8">2. SERVE ONLINE (vLLM 0.33)</text>
+              <text x="350" y="80" font-size="12" font-weight="600" fill="#0f172a">Standard API Request + Client Nonce</text>
+              <text x="350" y="96" font-size="11" fill="#475569">Multi-turn state · JSON Schema · Tool calls</text>
+              <text x="350" y="148" font-size="12" font-weight="700" fill="#0f172a">Normal Production Engine</text>
+              <text x="350" y="166" font-size="11" fill="#1e3a8a">Native FP · FlashAttention · CUDA Graph · Prefix Cache</text>
+              <text x="350" y="224" font-size="12" font-weight="600" fill="#0f172a">Stream Reply + proof_id</text>
+              <text x="350" y="238" font-size="11" fill="#475569">Background proving never blocks streaming</text>
+
+              <text x="676" y="44" font-size="13" font-weight="700" fill="#0f172a">3. PROVE ASYNC &amp; VERIFY ON CPU</text>
+              <text x="688" y="80" font-size="12" font-weight="600" fill="#0f172a">Spot-Check 315 Sampled Steps/Blocks</text>
+              <text x="688" y="96" font-size="11" fill="#475569">1.51 B/cell streaming + cross-slot batching</text>
+              <text x="688" y="110" font-size="11" fill="#475569">Open touched weight &amp; KV columns in-circuit</text>
+              <text x="688" y="160" font-size="12" font-weight="600" fill="#0f172a">Zero-Knowledge Proof over 𝔽<tspan baseline-shift="sub" font-size="9">p</tspan><tspan baseline-shift="super" font-size="9">3</tspan></text>
+              <text x="688" y="176" font-size="11" fill="#475569">Reveals nothing beyond standard API output</text>
+              <text x="688" y="230" font-size="12" font-weight="700" fill="#ffffff">Verify on Desktop CPU (12.0 s, i7-14700F)</text>
+            </g>
+
+            <g class="zh">
+              <text x="30" y="44" font-size="13" font-weight="700" fill="#0f766e">1. 上线时承诺一次</text>
+              <text x="42" y="80" font-size="12" font-weight="600" fill="#0f172a">真实线上权重（bf16 / fp8）</text>
+              <text x="42" y="96" font-size="11" fill="#475569">纠错码行编码 + 加盐列树</text>
+              <text x="42" y="148" font-size="12" font-weight="600" fill="#0f172a">模型配置与私有参数</text>
+              <text x="42" y="166" font-size="11" fill="#475569">算子舍入合约、隐藏提示词、采样密钥</text>
+              <text x="42" y="224" font-size="12" font-weight="700" fill="#0f172a">发布 model_id + 设置证明</text>
+              <text x="42" y="238" font-size="11" fill="#0f766e">跨所有回复复用，出证次数不耗尽承诺</text>
+
+              <text x="338" y="44" font-size="13" font-weight="700" fill="#1d4ed8">2. 在线服务（vLLM 0.33）</text>
+              <text x="350" y="80" font-size="12" font-weight="600" fill="#0f172a">标准 API 请求 + 客户端随机数</text>
+              <text x="350" y="96" font-size="11" fill="#475569">多轮加密状态 · JSON Schema · 工具调用</text>
+              <text x="350" y="148" font-size="12" font-weight="700" fill="#0f172a">原样运行生产引擎</text>
+              <text x="350" y="166" font-size="11" fill="#1e3a8a">原生浮点 · FlashAttention · CUDA Graph · 前缀缓存</text>
+              <text x="350" y="224" font-size="12" font-weight="600" fill="#0f172a">流式返回回复 + proof_id</text>
+              <text x="350" y="238" font-size="11" fill="#475569">后台出证绝不阻塞流式输出</text>
+
+              <text x="676" y="44" font-size="13" font-weight="700" fill="#0f172a">3. 后台出证与纯 CPU 验证</text>
+              <text x="688" y="80" font-size="12" font-weight="600" fill="#0f172a">随机抽查 315 个计算块与采样步</text>
+              <text x="688" y="96" font-size="11" fill="#475569">1.51 B/格流式见证 + 跨槽合批</text>
+              <text x="688" y="110" font-size="11" fill="#475569">在电路内秘密打开权重与 KV 列</text>
+              <text x="688" y="160" font-size="12" font-weight="600" fill="#0f172a">𝔽<tspan baseline-shift="sub" font-size="9">p</tspan><tspan baseline-shift="super" font-size="9">3</tspan> 扩域零知识证明</text>
+              <text x="688" y="176" font-size="11" fill="#475569">不泄露标准 API 之外的任何信息</text>
+              <text x="688" y="230" font-size="12" font-weight="700" fill="#ffffff">普通 CPU 独立验证（i7-14700F 实测 12.0 秒）</text>
+            </g>
           </svg>
         </div>
 
         <div class="grid-3" style="margin-top:18px;">
           <div class="card">
-            <h3><span class="en">One-Time Weight Commitment</span><span class="zh">模型只承诺一次，永不耗尽</span></h3>
+            <h3><span class="en">Streaming Witness (<code>1.51 B/cell</code>)</span><span class="zh">流式紧凑见证（<code>1.51 B/格</code>）</span></h3>
             <p>
-              <span class="en">Weights are Reed–Solomon encoded once when published. Each reply proof opens 123 random columns inside the zero-knowledge circuit so static codeword symbols never appear in public transcripts.</span>
-              <span class="zh">模型权重在发布时做一次纠错码承诺；每次出证在零知识电路内部秘密核对 123 列，公开证明里绝不暴露静态码字，因此无论服务多少亿次请求都不会磨损耗尽。</span>
+              <span class="en">Bit-packed integer columns, on-demand AES-256-CTR blinding regeneration, and cross-slot batching compress a 5.25-billion-cell full-security proof from ~260 GB down to 21.0 GiB host RAM with zero disk spill.</span>
+              <span class="zh">通过位打包整数见证、按需 AES-256-CTR 掩码重生成与跨槽合批，将 52.5 亿格全安全回复证明的主机内存从约 260 GB 压至 21.0 GiB，且零字节落盘。</span>
             </p>
           </div>
           <div class="card">
-            <h3><span class="en">Local Rounding-Contract Checks</span><span class="zh">按硬件算子规则检查浮点误差</span></h3>
+            <h3><span class="en">Local Rounding-Contract Checks</span><span class="zh">按硬件算子规则核验浮点误差</span></h3>
             <p>
-              <span class="en">Instead of forcing bit-identical integer execution across layers, each sampled block checks the engine's output against its own committed input using the operator's declared rounding bound—preventing cross-layer error blow-up.</span>
-              <span class="zh">不强求跨硬件逐位一致，而是在每个被抽查的算子块上，从引擎自己记录的输入出发算出该算子允许的浮点舍入范围。误差不跨层累积，正常浮点推理 100% 放行，偷换量化或跳层一眼抓出。</span>
+              <span class="en">Each sampled block checks the engine's output against its own committed input using the operator's declared rounding bound—preventing cross-layer error blow-up with only 1.2%–2.7% vLLM throughput cost for <code>R32</code> numerics.</span>
+              <span class="zh">在每个被抽查算子块上从引擎记录的真实输入出发传播单步舍入上限，误差不跨层爆炸；开启满足合约的 <code>R32</code> 浮点配置仅耗 1.2%–2.7% vLLM 吞吐。</span>
             </p>
           </div>
           <div class="card">
-            <h3><span class="en">Sort-Free Keyed Random Sampling</span><span class="zh">支持真实温度与 top-p 随机采样</span></h3>
+            <h3><span class="en">Private API &amp; Schema Semantics</span><span class="zh">完整商业 API 与结构化约束</span></h3>
             <p>
-              <span class="en">A keyed Poseidon2 sponge partitions the vocabulary into 32-token buckets for Gumbel-max selection and inverse-CDF sampling, cutting vocabulary circuit size ~10× while supporting coupled speculative decoding.</span>
-              <span class="zh">用带密钥哈希将词表按 32 词分桶采样，无需全词表排序即可精确支持温度与 top-p 随机生成，把词表电路开销降低约 10 倍，并天然兼容投机解码。</span>
+              <span class="en">Supports hidden system prompts, hidden <code>&lt;think&gt;</code> CoT, multi-turn AEAD state chains, tool witnesses, and minimal byte-DFA JSON Schema masks bound over 𝔽<sub>p</sub><sup>3</sup> in <code>O(k_2 Q_pad)</code> cells.</span>
+              <span class="zh">原生支持隐藏系统提示词、隐藏 <code>&lt;think&gt;</code> 思维链、跨轮加密状态链、工具调用见证，以及在 <code>O(k_2 Q_pad)</code> 格内绑定的最小字节自动机 JSON Schema 约束解码。</span>
             </p>
           </div>
         </div>
@@ -554,32 +636,32 @@
           <span class="zh">分阶段发布路线</span>
         </h2>
         <p class="section-lead">
-          <span class="en">Each stage is published only after passing its verification checks.</span>
-          <span class="zh">每个阶段都在完成全部验证与整理后再对外公开。</span>
+          <span class="en">Each stage is published only after passing its formal, empirical, and white-box forgery checks.</span>
+          <span class="zh">每个阶段都在完成全部形式化、真卡实测与白盒防伪造核验后对外公开。</span>
         </p>
         <div class="grid-3">
           <div class="card">
             <span class="pill done"><span class="en">Stage 0 · Released (v0.2.0)</span><span class="zh">Stage 0 · 已发布 (v0.2.0)</span></span>
             <h3><span class="en">Theory, Lean 4 Proofs &amp; Calibration</span><span class="zh">完整理论、Lean 4 证明与真卡标定</span></h3>
             <p>
-              <span class="en">Technical report, ten protocol specifications (<code>01–10</code>), standalone Lean 4.29.1 proof library (18 modules / 194 declarations), and GPU tolerance &amp; cheat-detection benchmarks.</span>
-              <span class="zh">包含英文技术论文、10 份协议规范（<code>01–10</code>）、独立可编译的 Lean 4.29.1 证明库（18 模块 / 194 条声明）以及真实模型浮点与防作弊实测数据。</span>
+              <span class="en">Technical report, ten protocol specifications (<code>01–10</code>), standalone Lean 4.29.1 library, and GPU tolerance &amp; cheat-detection benchmarks.</span>
+              <span class="zh">包含英文技术论文、10 份协议规范（<code>01–10</code>）、独立 Lean 4.29.1 证明库以及真实模型浮点与防作弊实测数据。</span>
             </p>
           </div>
           <div class="card">
-            <span class="pill wip"><span class="en">Stage 1 · In Progress</span><span class="zh">Stage 1 · 开发中</span></span>
-            <h3><span class="en">CPU Verifier Demo &amp; vLLM Prototype</span><span class="zh">独立验证器演示与 vLLM 原型</span></h3>
+            <span class="pill done"><span class="en">Stage 1 · Released (v0.3.0)</span><span class="zh">Stage 1 · 已发布 (v0.3.0)</span></span>
+            <h3><span class="en">End-to-End Prover, CPU Demo &amp; vLLM</span><span class="zh">全模型证明器、CPU 演示与 vLLM 闭环</span></h3>
             <p>
-              <span class="en">Standalone CPU verifier CLI, full-model proof bundles (honest replies accepted, 7 cheat classes rejected), interactive browser demo, and non-invasive vLLM 0.33 + GPU prover integration.</span>
-              <span class="zh">发布普通 CPU 一行命令可跑的验证器、真实模型诚实与作弊证明样本包、浏览器交互验证页，以及不侵入推理主循环的 vLLM 0.33 出证原型。</span>
+              <span class="en">Streaming 𝔽<sub>p</sub><sup>3</sup> prover (<code>1.51 B/cell</code>), full <code>Qwen3-0.6B</code> setup &amp; 315-draw reply proofs, standalone CPU verifier CLI, offline laptop demo, non-invasive <code>vLLM 0.33</code> integration, and 19th Lean module.</span>
+              <span class="zh">发布 𝔽<sub>p</sub><sup>3</sup> 流式证明器（<code>1.51 B/格</code>）、完整 <code>Qwen3-0.6B</code> 设置与 315 抽查回复证明、独立纯 CPU 验证器、离线演示包、无侵入 <code>vLLM 0.33</code> 原型与第 19 个 Lean 模块。</span>
             </p>
           </div>
           <div class="card">
             <span class="pill plan"><span class="en">Stage 2 · Planned</span><span class="zh">Stage 2 · 规划中</span></span>
-            <h3><span class="en">Multi-Architecture &amp; ≤5% Overhead</span><span class="zh">多架构通吃与 ≤5% 生产成本</span></h3>
+            <h3><span class="en">Multi-Architecture &amp; Low Overhead</span><span class="zh">跨架构隐藏原语槽与低成本优化</span></h3>
             <p>
-              <span class="en">One verifier across Dense GQA, Sparse MoE, MLA, and Linear Attention; open byte-level format &amp; test vectors; cluster cost benchmarks toward ≤5% amortized overhead.</span>
-              <span class="zh">同一套协议与验证器通吃稠密 GQA、稀疏 MoE、MLA 与线性注意力模型；发布开放字节格式规范与测试向量，将集群额外总成本压向 ≤5%。</span>
+              <span class="en">Uniform primitive slots wired by hidden tables across Dense GQA, Sparse MoE, MLA, and Linear Attention; double-buffered async capture toward ≤5% online overhead &amp; batched Basefold openings.</span>
+              <span class="zh">通过隐藏连线表统一原语槽通吃稠密 GQA、稀疏 MoE、MLA 与线性注意力；以双缓冲异步采集与多项式打开批处理持续压降开销。</span>
             </p>
           </div>
         </div>
@@ -593,25 +675,25 @@
           <span class="zh">Lean 4 机器检验范围与边界</span>
         </h2>
         <p class="section-lead">
-          <span class="en">All 18 Lean 4.29.1 modules (194 declarations) build cleanly with zero <code>sorry</code> and only Lean's three standard axioms.</span>
-          <span class="zh">全库 18 个 Lean 4.29.1 模块（194 条定理声明）零 <code>sorry</code>、仅依赖 Lean 标准三条公理编译通过。</span>
+          <span class="en">All 19 Lean 4.29.1 modules (219 declarations) build cleanly with zero <code>sorry</code> and only Lean's three standard axioms.</span>
+          <span class="zh">全库 19 个 Lean 4.29.1 模块（219 条定理声明）零 <code>sorry</code>、仅依赖 Lean 标准三条公理编译通过。</span>
         </p>
 
         <div class="grid-2">
           <div class="card">
-            <span class="pill done"><span class="en">Machine-Checked in Lean 4</span><span class="zh">已由 Lean 4 机器证明</span></span>
-            <h3><span class="en">Lifetime Soundness, Sampling &amp; Zero-Knowledge Cores</span><span class="zh">抗刷随机数可靠性、随机采样完备性与零知识掩码</span></h3>
+            <span class="pill done"><span class="en">Machine-Checked in Lean 4 (19 Modules)</span><span class="zh">已由 Lean 4 机器证明（19 个模块）</span></span>
+            <h3><span class="en">Lifetime Soundness Composition, Sampling, Constrained Masks &amp; Blinding</span><span class="zh">逐轮可靠性组合定理、分桶采样、约束掩码与零知识盲化</span></h3>
             <p>
-              <span class="en">Proves the end-to-end reduction from protocol specifications to the <code>2^-40</code> lifetime soundness bound over <code>2^64</code> adaptive queries (<code>ProtocolBridge</code>, <code>RoundByRound</code>), all 16 sample-count table cells (<code>LifetimeSoundness</code>), universal completeness and zero-slack circuit checks for bucketed top-p sampling (<code>BucketSampling</code>), causal multi-round masking uniformity and Libra bijections (<code>MaskJoint</code>), pairwise MoE routing (<code>Gadgets</code>), coupled speculative decoding (<code>Speculative</code>), and algebraic equivalences for MLA, chunked linear attention, and PP/EP.</span>
-              <span class="zh">证明了从协议规范到 <code>2^64</code> 次查询下漏网率 <code>≤ 2^-40</code> 的完整逐轮可靠性定理（<code>ProtocolBridge</code>、<code>RoundByRound</code>）、16 格抽查参数表（<code>LifetimeSoundness</code>）、分桶温度/top-p 采样对一切输入的完备性与零空子电路检查（<code>BucketSampling</code>）、多轮证明的均匀盲化与 Libra 双射（<code>MaskJoint</code>）、MoE 路由、耦合投机解码以及 MLA / 分块线性注意力 / 多卡并行的代数等价性。</span>
+              <span class="en">Proves that given a round-by-round decomposition (<code>ProtocolRBRSpec</code>) satisfying the stated per-round escape bounds, bad-accept probability is at most <code>2^-40</code> over <code>2^64</code> adaptive queries (<code>ProtocolBridge</code>, <code>RoundByRound</code>), alongside all 16 sample-count table cells (<code>LifetimeSoundness</code>), completeness and zero-slack boundary-pair checks for bucketed top-p sampling (<code>BucketSampling</code>), multilinear Schwartz–Zippel soundness (<code>≤ 2^-186</code>) for compiled JSON-Schema vocabulary masks (<code>ConstrainedMask</code>), causal multi-round masking uniformity and Libra bijections (<code>MaskJoint</code>), pairwise MoE routing (<code>Gadgets</code>), coupled speculative decoding (<code>Speculative</code>), and algebraic equivalences for MLA, chunked linear attention, and PP/EP.</span>
+              <span class="zh">证明给定满足各轮逃逸上界的逐轮分解规格（<code>ProtocolRBRSpec</code>），在 <code>2^64</code> 次查询下坏接受概率 <code>≤ 2^-40</code>（<code>ProtocolBridge</code>、<code>RoundByRound</code>），并机检了 16 格抽查参数表（<code>LifetimeSoundness</code>）、分桶采样对任意温度与 top-p 不误拒诚实采样且边界词对检查零松弛（<code>BucketSampling</code>）、JSON Schema 词表掩码的多线性 Schwartz–Zippel 绑定（错误掩码通过率 <code>≤ 2^-186</code>，<code>ConstrainedMask</code>）、前缀可测多轮均匀盲化与 Libra 双射（<code>MaskJoint</code>），以及 MoE、耦合投机解码、MLA、分块线性注意力与多卡并行的代数恒等式。</span>
             </p>
           </div>
           <div class="card">
             <span class="pill warn"><span class="en">Stated Explicitly Outside Lean</span><span class="zh">明确列在 Lean 之外的前提</span></span>
             <h3><span class="en">Cryptographic Primitives &amp; Real Floating-Point Bounds</span><span class="zh">底层密码学假设与实数浮点误差推导</span></h3>
             <p>
-              <span class="en">Basefold unique-decoding proximity soundness (<code>A-PCS</code>), mechanical extraction linking concrete circuit-builder code to Lean's <code>CompiledCS</code>, multi-proof ROM programming hybrids, and real-valued floating-point error propagation formulas (backed by paper proofs and 392,928 hardware-tested blocks) are documented explicitly in <code>specs/07</code>.</span>
-              <span class="zh">Basefold 多项式承诺本身的邻近可靠性假设、具体电路生成代码与 Lean 抽象约束系统的机械提取连接、多证明随机预言机归约，以及实数浮点误差传播公式（由论文数学证明和 39 万块真卡实测支撑）均在 <code>specs/07</code> 中逐条列明。</span>
+              <span class="en">Basefold unique-decoding proximity soundness (<code>A-PCS</code>), mechanical extraction linking Python circuit-builder code to Lean's <code>ProtocolRBRSpec</code> / <code>CompiledCS</code>, multi-proof ROM/PRG hybrids, and real-valued floating-point error propagation formulas (backed by paper proofs, 392,928 hardware-tested blocks, and 33 white-box forgery &amp; tamper checks) are documented explicitly in <code>specs/07</code>.</span>
+              <span class="zh">Basefold 多项式承诺本身的邻近可靠性假设、Python 电路代码与 Lean 抽象约束系统的机械提取连接、多证明随机预言机归约，以及实数浮点误差传播公式（由论文数学证明、39 万块真卡实测与 33 项白盒伪造及篡改测试支撑）均在 <code>specs/07</code> 中逐条列明。</span>
             </p>
           </div>
         </div>
@@ -621,41 +703,47 @@
     <section id="benchmarks">
       <div class="container">
         <h2>
-          <span class="en">Hardware Measurements on Real Models</span>
-          <span class="zh">真实模型硬件实测结果</span>
+          <span class="en">End-to-End Proving &amp; Hardware Measurements</span>
+          <span class="zh">端到端出证与真实模型硬件实测</span>
         </h2>
         <p class="section-lead">
-          <span class="en">Measured on an <strong>NVIDIA RTX 4070 Ti SUPER 16 GB</strong> running native <code>bf16</code> + FlashAttention-2. Raw JSON outputs are in <code>benchmarks/certified/results/</code>.</span>
-          <span class="zh">在单张 <strong>NVIDIA RTX 4070 Ti SUPER 16 GB</strong> 上运行原生 <code>bf16</code> + FlashAttention-2 实测，原始 JSON 数据保存在 <code>benchmarks/certified/results/</code>。</span>
+          <span class="en">Measured on a single consumer workstation (<strong>NVIDIA RTX 4070 Ti SUPER 16 GB</strong>, Intel i7-14700F, 25 GB RAM).</span>
+          <span class="zh">全部在单台消费级工作站（<strong>NVIDIA RTX 4070 Ti SUPER 16 GB</strong>，Intel i7-14700F，25 GB 内存）上实测。</span>
         </p>
 
         <table>
           <thead>
             <tr>
-              <th><span class="en">Test</span><span class="zh">测试内容</span></th>
-              <th><span class="en">Models</span><span class="zh">测试模型</span></th>
-              <th><span class="en">Result</span><span class="zh">实测结果</span></th>
-              <th><span class="en">Why It Matters</span><span class="zh">实际意义</span></th>
+              <th><span class="en">Benchmark</span><span class="zh">测试项目</span></th>
+              <th><span class="en">Model &amp; Stack</span><span class="zh">测试模型与环境</span></th>
+              <th><span class="en">Measured Result</span><span class="zh">实测结果</span></th>
+              <th><span class="en">Notes &amp; Current Gap</span><span class="zh">关键结论与当前差距</span></th>
             </tr>
           </thead>
           <tbody>
             <tr>
-              <td><strong><span class="en">Honest Native-FP Execution</span><span class="zh">诚实原生浮点推理</span></strong></td>
-              <td>Qwen3-0.6B, Llama-3.2-1B-Instruct</td>
-              <td><strong>0 / 249,384</strong> &amp; <strong>0 / 143,544</strong> bad blocks</td>
-              <td><span class="en">Zero false rejections with fp32 GEMM reductions; also caught PyTorch's default bf16 split-K prefill bug (up to 39× out of bound).</span><span class="zh">开启 fp32 归约后诚实推理零误拒（不泄露“能否出证”侧信道）；同时抓出 PyTorch 默认 bf16 split-K 预填充高达 39 倍的精度违约。</span></td>
+              <td><strong><span class="en">Full 315-Draw Reply Proof</span><span class="zh">全安全 315 次抽查回复证明</span></strong></td>
+              <td>Unsliced <code>Qwen3-0.6B</code> (𝔽<sub>p</sub><sup>3</sup>, <code>T=152, T_pad=256</code>)</td>
+              <td><strong>5.25B cells</strong> · <strong>21.0 GiB RSS</strong> (<code>0 B</code> spill) · <strong>12.02 s CPU verify</strong></td>
+              <td><span class="en"><code>1.51 B/cell</code> streaming + cross-slot batching (<code>6,887</code> vectors); GPU prove takes <code>3,877.7 s</code> (~1,009× single-stream inference), <code>149.8 MB</code> proof.</span><span class="zh"><code>1.51 B/格</code> 流式内存 + 跨槽合批（<code>6,887</code> 向量）；当前单卡出证 <code>3,877.7 s</code>（约单路推理 1,009 倍），证明 <code>149.8 MB</code>。</span></td>
             </tr>
             <tr>
-              <td><strong><span class="en">8 Realistic Cost-Saving Cheats</span><span class="zh">8 类常见省算力作弊检出</span></strong></td>
-              <td>Qwen3-0.6B (vs. Qwen2.5-0.5B, int4, fp8, low-rank, layer-skip, KV eviction)</td>
-              <td><strong>97.3%–100%</strong> of compute cost flagged bad</td>
-              <td><span class="en">Sublayer lineage accounting (<code>h = 3</code>) catches zero-operand layer skipping (98.7%); layer-only checks miss same-weight fp8 (3.3%) and KV truncation (0%).</span><span class="zh">子层谱系追责（<code>h = 3</code>）连填零跳层也能抓出 98.7% 坏成本；而如果只查层边界，同权重转 fp8（3.3%）和截断上下文（0%）都会漏检。</span></td>
+              <td><strong><span class="en">One-Time Commitment &amp; Setup Proof</span><span class="zh">一次性模型承诺与设置证明</span></strong></td>
+              <td>Unsliced <code>Qwen3-0.6B</code> (596M params, <code>R_max=2048</code>)</td>
+              <td><strong>94.2 s</strong> commit · <strong>8.67B cells</strong> · <strong>59.9 s CPU verify</strong></td>
+              <td><span class="en">Covers items (i)–(vi) over 𝔽<sub>p</sub><sup>3</sup> in <code>3,623.7 s</code> GPU time (<code>12.2 GiB</code> RSS, <code>3.54 GiB</code> VRAM pool, <code>353 MB</code> proof).</span><span class="zh">在 𝔽<sub>p</sub><sup>3</sup> 上完整证明第 (i)–(vi) 项，GPU 耗时 <code>3,623.7 s</code>，主机内存 <code>12.2 GiB</code>、显存池 <code>3.54 GiB</code>。</span></td>
             </tr>
             <tr>
-              <td><strong><span class="en">Sub-Rounding Sparse-Attention Bound</span><span class="zh">低于舍入量级的长上下文丢键边界</span></strong></td>
-              <td>Qwen3-4B (4k–32k context)</td>
-              <td>Oracle upper bound: <strong>12.4%–55.1%</strong> (<strong>5.9%–36.6%</strong> with LSE)</td>
-              <td><span class="en">Dropping keys below bf16 rounding cannot be rejected without rejecting honest kernels; recording scalar LSE halves the bound, which is disclosed per <code>model_id</code>.</span><span class="zh">影响小于 bf16 舍入的极低权重丢键无法在不误杀诚实内核的前提下拦截；顺手记录标量 LSE 可把理论上界砍半，并随 <code>model_id</code> 公开披露。</span></td>
+              <td><strong><span class="en">Live <code>vLLM 0.33</code> Serving &amp; Forgery Suite</span><span class="zh"><code>vLLM 0.33</code> 在线服务与防伪造测试</span></strong></td>
+              <td><code>vLLM 0.33</code> (<code>--cudagraph</code>) + <code>Qwen3-0.6B</code></td>
+              <td><code>R32</code> numerics <strong>−1.2%..−2.7%</strong> · <strong>9/9 E2E PASS</strong> · <strong>33/33 checks REJECTED</strong></td>
+              <td><span class="en">Zero Python callbacks on CUDA-graph replay; Stage 1 sync per-step D2H port harvest reduces decode throughput by 53%–85% (async double-buffering planned for Stage 2).</span><span class="zh">CUDA Graph 重放零 Python 回调；Stage 1 参考采集器采用每步同步 D2H 拷贝（解码吞吐下降 53%–85%，Stage 2 改为双缓冲异步流）。</span></td>
+            </tr>
+            <tr>
+              <td><strong><span class="en">Honest FP &amp; 8-Mode Cheat Calibration</span><span class="zh">原生浮点零误拒与 8 类作弊检出</span></strong></td>
+              <td><code>Qwen3-0.6B</code>, <code>Llama-3.2-1B-Instruct</code>, <code>Qwen3-4B</code></td>
+              <td><strong>0 / 392,928</strong> bad blocks · <strong>97.3%–100%</strong> cheat cost flagged</td>
+              <td><span class="en">Catches PyTorch's default <code>bf16</code> split-K violation (up to 39×); bounds 4k–32k low-weight key-drop compute savings to <strong>5.9%–36.6%</strong> with scalar LSE.</span><span class="zh">抓出默认 <code>bf16</code> split-K 高达 39 倍违约；结合标量 LSE 将 4k–32k 丢弃低注意力权重键所能省下的算力上界压至 <strong>5.9%–36.6%</strong>。</span></td>
             </tr>
           </tbody>
         </table>
@@ -668,11 +756,12 @@
       <div style="display:flex; justify-content:space-between; flex-wrap:wrap; gap:12px;">
         <div>
           <strong>FlashProve-Next</strong> · Apache-2.0 License ·
-          <span class="en">Stage 0 Release (`v0.2.0`, November 2026)</span>
-          <span class="zh">Stage 0 发布版（`v0.2.0`，2026 年 11 月）</span>
+          <span class="en">Stage 1 Release (<code>v0.3.0</code>, November 2026)</span>
+          <span class="zh">Stage 1 发布版（<code>v0.3.0</code>，2026 年 11 月）</span>
         </div>
         <div>
           <a href="https://github.com/s-JoL/FlashProve-Next" target="_blank" rel="noopener">GitHub</a> ·
+          <a href="https://github.com/s-JoL/FlashProve-Next/blob/main/REVIEW.md" target="_blank" rel="noopener"><span class="en">Reviewer Guide</span><span class="zh">审阅指南</span></a> ·
           <a href="specs.html"><span class="en">Specifications</span><span class="zh">协议规范</span></a> ·
           <a href="paper/FlashProve-Next.pdf"><span class="en">Technical Report PDF</span><span class="zh">论文 PDF</span></a>
         </div>

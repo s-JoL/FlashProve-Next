@@ -1,0 +1,12 @@
+FlashProve-Next
+Copyright 2026 Liang Song
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0.
+
+Third-Party Notices:
+- `demo/bundles/qwen3_tokenizer.json.gz` is compressed from `tokenizer.json` of `Qwen/Qwen3-0.6B`
+  (Copyright Alibaba Cloud / Qwen Team), distributed under the Apache License, Version 2.0.
+- Goldilocks width-12 Poseidon2 round constants (`flashprove_next/poseidon2.py`) match the
+  Plonky3 reference implementation (MIT / Apache-2.0).

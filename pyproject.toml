@@ -1,0 +1,56 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "flashprove-next"
+version = "0.3.0"
+description = "Zero-knowledge verifiable inference for production LLM APIs served by native floating-point engines."
+readme = "README.md"
+license = { text = "Apache-2.0" }
+requires-python = ">=3.10"
+authors = [{ name = "FlashProve-Next contributors" }]
+keywords = ["zero-knowledge", "verifiable inference", "LLM", "sumcheck", "vLLM"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: Apache Software License",
+    "Operating System :: POSIX :: Linux",
+    "Operating System :: MacOS",
+    "Topic :: Security :: Cryptography",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+dependencies = [
+    "numpy>=1.26",
+    "cryptography>=42.0",
+]
+
+[project.optional-dependencies]
+tokenizers = ["tokenizers>=0.19"]
+gpu = [
+    "cupy-cuda12x; platform_system=='Linux'",
+    "torch>=2.4",
+]
+serve = [
+    "vllm>=0.8",
+    "fastapi",
+    "uvicorn",
+    "transformers>=4.45",
+]
+test = ["pytest>=7"]
+
+[project.scripts]
+fpn-verify = "flashprove_next.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/s-JoL/FlashProve-Next"
+
+[tool.setuptools]
+packages = ["flashprove_next"]
+include-package-data = true
+
+[tool.setuptools.package-data]
+flashprove_next = ["_fast_cpu.cpp"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_fast_cpu.py"]

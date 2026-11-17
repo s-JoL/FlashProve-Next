@@ -65,12 +65,12 @@ For a commercial closed-weight LLM provider, adopting verifiable inference is vi
 | $N_s$, `proof_id` | Independent of all state | Fresh $256$-bit CSPRNG strings emitted in the initial stream event ([Spec 04](04-completeness.md) §7.1) | `[Def]` |
 | $R$, $\mathsf{St}_{\rm new}$ | Indistinguishable from uniform digests | $R$ absorbs fresh $256$-bit **root salt** $\varsigma_R$ ([Spec 01](01-relation.md) §4.1), remaining pseudorandom even on $N=0$ all-padding trees; $\mathsf{St}_{\rm new}$ absorbs fresh $256$-bit $r_i$; fixed tree depth | `[Paper]` (ideal-permutation sponge hiding) |
 | `blob` | Fixed-length, content-hiding | $\mathsf{AEAD.Enc}_{K_{\rm wrap}}$ output padded to `Prof` constant byte length | `[Assume]` AEAD `IND$-CPA` |
-| `model_id` | Indistinguishable from uniform digest | Salted $H_{\rm in}$ hash with fresh $256$-bit $\varsigma_0$ per release ([Spec 09](09-model-commitment.md) §4.1) | `[Paper]` |
-| Setup certificate | Hides weight vs. volatile rotation | Full weight setup proof $\pi_{\rm setup}$ and volatile-only proof $\pi'_{\rm setup}$ are padded into an **identical fixed-length container** published alongside `model_id` ([Spec 09](09-model-commitment.md) §4.4) | `[Def]` |
+| `model_id` | Indistinguishable from uniform digest | Salted $H_{\rm in}$ hash with fresh $256$-bit $\varsigma_0$ per release ([Spec 09](09-model-commitment.md) §2.1) | `[Paper]` |
+| Setup certificate | Hides weight vs. volatile rotation | Full weight setup proof $\pi_{\rm setup}$ and volatile-only proof $\pi'_{\rm setup}$ are padded into an **identical fixed-length container** published alongside `model_id` ([Spec 09](09-model-commitment.md) §3.2) | `[Def]` |
 | $\mathsf{cm}_{\rm glob}$ & proof bytes $\pi$ | Simulated without witness (§4.1) | Fixed-shape IOP transcript padded to $S_{\mathrm{Prof}}$ bytes | `[Paper]`, `[Lean: MaskJoint.multiround_independent_causal]` |
 | Release times, codes, replies | Deterministic function of $(\mathcal L_i, \mathcal O, t, \text{client action})$ | Governed by `R1`–`R13` state machine ([Spec 04](04-completeness.md) §7, Lemma 6) | `[Def]`, `[Paper]` |
 | Verifier runtime | Depends solely on $\mathrm{Prof}$ | Fixed circuit geometry and query count | `[Def]` |
-| Co-batched tenant requests | Mutually invisible | Independent per-response transcripts and masks; per-proof HCO columns freshly blinded ([Spec 09](09-model-commitment.md) §4.5) | `[Paper]` |
+| Co-batched tenant requests | Mutually invisible | Independent per-response transcripts and masks; per-proof HCO columns freshly blinded ([Spec 09](09-model-commitment.md) §3.1–§3.2) | `[Paper]` |
 
 All usage fields bound in $X_0$ must be a subset of $\mathcal L_{\mathrm{API}}$; in truncated prefix mode ([Spec 04](04-completeness.md) §7.3), $X_0$ omits usage counters not returned by the native API.
 
@@ -151,7 +151,7 @@ Essential to Hybrid $H_4$ below, $\mathcal S$ produces an accepting transcript f
 |---|---|---|---|
 | $H_0$ | Real world $\mathsf{Real}_{\mathcal A}$ | — | — |
 | $H_1$ | In atomic proof-release order, replace each released proof with $\mathcal S$'s witness-free simulated proof (§4.1 Step 4) | $N_\pi \varepsilon_{\mathrm{deg}} + \frac{q_H N_{\mathrm{prog}} + N_{\mathrm{prog}}^2}{2^{256}} + N_\pi J \varepsilon_{\mathrm{pole}}$ | `(A1)`, `(A3)`, Lemma 4.2; discarded retries are never released, and LogUp pole retries skew released challenges by $\le J \varepsilon_{\mathrm{pole}}$ ([Spec 04](04-completeness.md) §2) |
-| $H_2$ | Replace `model_id` ($\mathsf C_W, \mathsf C_{\rm raw}, \mathsf C_{\rm cfg}$), $R$, and $\mathsf{St}_{\rm new}$ with uniform digests; `blob` with uniform bytes; setup proofs with simulated containers | $\frac{q_P N_{\mathrm{com}}}{2^{255}} + N_{\mathrm{mid}} \delta_{\mathrm{setup}} + \mathsf{Adv}^{\mathrm{AEAD}}$ | `(A2)`, `(A6)`: in $H_1$, response proofs no longer read commitment preimages, leaving pure salted sponge outputs (in two-pass AES-256-CTR $\pi_{\rm setup}$, $\delta_{\mathrm{setup}}$ includes $B_{\mathrm{setup}} \mathsf{Adv}^{\mathrm{PRG}}$ under `A-PRG`, [Spec 09](09-model-commitment.md) §6) |
+| $H_2$ | Replace `model_id` ($\mathsf C_W, \mathsf C_{\rm raw}, \mathsf C_{\rm cfg}$), $R$, and $\mathsf{St}_{\rm new}$ with uniform digests; `blob` with uniform bytes; setup proofs with simulated containers | $\frac{q_P N_{\mathrm{com}}}{2^{255}} + N_{\mathrm{mid}} \delta_{\mathrm{setup}} + \mathsf{Adv}^{\mathrm{AEAD}}$ | `(A2)`, `(A6)`: in $H_1$, response proofs no longer read commitment preimages, leaving pure salted sponge outputs (in two-pass AES-256-CTR $\pi_{\rm setup}$, $\delta_{\mathrm{setup}}$ includes $B_{\mathrm{setup}} \mathsf{Adv}^{\mathrm{PRG}}$ under `A-PRG`, [Spec 09](09-model-commitment.md) §2.2) |
 | $H_3$ | Compute release timestamps, failure codes, and endpoint replies deterministically from $(\mathcal L, \mathcal O, \text{client actions})$ | $\delta_{\mathrm{num}} + \delta_{\mathrm{flt}}$ | [Spec 04](04-completeness.md) Lemma 6; exact except for secret-dependent numerical rejections (`R13`) or undeclared resource faults violating `R9` |
 | $H_4$ | Replace engine sampling noise $\mathsf{PRF}_{K_{\rm prf}}$ with true random $\mathsf{RF}_e$ under the identical discrete maps $(\mathsf G, \mathsf U)$ | $\mathsf{Adv}^{\mathrm{PRF}} + \frac{N_{\mathrm{req}}^2}{2^{257}}$ | `(A2)`, Lemma 5.1, §5.4: $K_{\rm prf}$ now appears **solely** in engine sampling; proofs are simulated without witnesses and `model_id` is uniform |
 | $H_5$ | Identical to $\mathsf{Ideal}_{\mathcal A, \mathcal S}$ (transcript scope) | $0$ | Engine outputs match $\mathcal F_{\mathrm{API}}$ identically |
@@ -177,7 +177,7 @@ Essential to Hybrid $H_4$ below, $\mathcal S$ produces an accepting transcript f
 | Inner folding & Basefold fold masking | `MaskJoint.fold_mask_independent`, `MaskJoint.postprocess_independent` | Nonzero folding challenge (`1/\|\mathbb E\|`, `[Paper]`) |
 | Causal multi-round transcript uniformity | `MaskJoint.multiround_independent`, `MaskJoint.causal_transcript_existsUnique`, `MaskJoint.multiround_independent_causal` | None (single-proof causal pushforward fully mechanized) |
 | Merged-domain zero-sum ZK-LogUp | `LogUp.mergedZeroSum_iff` | Composition with column masks (`[Paper]`) |
-| Mask-rank budget across all columns | Covered algebraically by `MaskJoint.joint_tensor_surjective` | Static rank checker over frozen response + HCO columns (`[Open]`) |
+| Mask-rank budget across all columns | Covered algebraically by `MaskJoint.joint_tensor_surjective` | Checked per proof via `zk_budget_check` (`max_claims_per_random_row <= 1`, `[Meas]`: `0.25` across `6,887` vectors) |
 | Multi-proof ROM simulator & state machine | Proved on paper (§4.1–§4.3, BCS transformation; [Spec 04](04-completeness.md) Lemma 6) | Mechanized ROM/state-machine model (`[Open]`) |
 
 ### 4.5 Concrete Lifetime Advantage Budget
@@ -190,7 +190,7 @@ Essential to Hybrid $H_4$ below, $\mathcal S$ produces an accepting transcript f
 - **$N_s$ collisions:** $2^{96} / 2^{257} = 2^{-161}$;
 - **Keyed-sponge PRF:** $\mathsf{Adv}^{\mathrm{PRF}} \approx 2^{-95}$ (§5.4).
 
-Summing all cryptographic terms yields $\approx 2^{-88} + N_{\mathrm{mid}} \delta_{\mathrm{setup}} + \mathsf{Adv}^{\mathrm{AEAD}} + \delta_{\mathrm{num}} + \delta_{\mathrm{flt}} \ll 2^{-40}$, provided $\delta_{\mathrm{num}} = 0$ and $\delta_{\mathrm{flt}} = 0$.
+Summing all statistical terms together with streaming AES-256-CTR mask regeneration (`A-PRG` under fresh ephemeral keys per commitment group) yields $\approx 2^{-88} + N_\pi G_{\mathrm{grp}}\mathsf{Adv}^{\mathrm{PRG}} + N_{\mathrm{mid}} \delta_{\mathrm{setup}} + \mathsf{Adv}^{\mathrm{AEAD}} + \delta_{\mathrm{num}} + \delta_{\mathrm{flt}} \ll 2^{-40}$, provided $\delta_{\mathrm{num}} = 0$ and $\delta_{\mathrm{flt}} = 0$.
 
 ### 4.6 Protecting the "Provability Bit" ($\delta_{\mathrm{num}} = 0$)
 
@@ -273,7 +273,6 @@ Bucketed sampling ($\beta_s = 32, V_{\max} = 2^{18}$) invokes $\lceil B / 16 \rc
 
 ## 6. Scope and Future Work
 
-1. **Streaming-hook latency benchmarking (§4.7):** Measuring end-to-end token inter-arrival jitter under asynchronous DMA copy to validate `H-hook` empirically.
-2. **Automated mask-rank verification (§4.4):** Implementing a static linear-independence verifier over the $\mathbb F_{p^3}$ constraint matrix covering all response and HCO columns to bound $\varepsilon_{\mathrm{deg}}$ mechanically.
-3. **Mechanized multi-proof ROM & state-machine models:** Extending the single-proof Lean causal masking theorems (`MaskJoint.multiround_independent_causal`) to multi-proof ROM programming and formalizing [Spec 04](04-completeness.md)'s `R1`–`R13` state machine in Lean 4 or TLA+.
-4. **Audited round constants & empirical distinguisher testing:** Standardizing audited Plonky3 Poseidon2 constants across production builds and adding statistical distinguisher suites alongside existing byte-overlap tests.
+1. **Streaming-hook latency benchmarking (§4.7):** Measuring end-to-end token inter-arrival jitter under double-buffered asynchronous DMA copy to validate `H-hook` empirically.
+2. **Mechanized multi-proof ROM & state-machine models:** Extending the single-proof Lean causal masking theorems (`MaskJoint.multiround_independent_causal`) to multi-proof ROM programming and formalizing [Spec 04](04-completeness.md)'s `R1`–`R13` state machine in Lean 4 or TLA+.
+3. **Empirical distinguisher testing:** Adding statistical distinguisher suites alongside automated `zk_budget_check` (`0.25 <= 1`) and Plonky3 Poseidon2 round-constant tests.

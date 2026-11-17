@@ -102,15 +102,13 @@ To prevent a dishonest prover from substituting another committed tile of identi
 
 ## 4. Measured Component Costs & Frontier Scaling `[Meas + Est]`
 
-### 4.1 Full `Qwen3-0.6B` Measurements (`RTX 4070 Ti SUPER 16 GB` + `Intel i7-14700F`)
+### 4.1 Full `Qwen3-0.6B` Measurements over $\mathbb F_{p^3}$ (`RTX 4070 Ti SUPER 16 GB` + `Intel i7-14700F`)
 
-| Component | Committed Cells | Proving Time | Proof Size | CPU Verification | Notes |
+| Component | Committed Cells | Proving Time | Proof / Store Size | CPU Verification | Notes |
 |---|---|---|---|---|---|
-| **One-time static commitment** ($\mathsf C_W$, $596\text{M}$ params) | — | $169.8\text{ s}$ ($R_{\max}=1024$) / $334\text{ s}$ ($R_{\max}=2048$ with $\mathbf W^r$) | $19.33\text{ GB}$ / $38.65\text{ GB}$ codeword on NVMe | — | GPU column-sponge share $\approx 3.3\text{ s}$ ($\approx 3\times 10^8$ perms/s) |
-| **Zero-knowledge per-proof `HCO`** (`449` hidden tiles, `123` hidden cols) | **7.03 M** | $12.3\text{ s}$ warm / $31.2\text{ s}$ cold ($2.6\text{–}3.6\text{ s}$ IOP) | **1.42 MB** | **0.12 s** | Peak GPU memory $1.77\text{ GiB}$; `int4`-requantized tiles rejected $123/123$ cols |
-| **One-time setup proof $\pi_{\mathrm{setup}}$** (items (i)–(iv), 147 blocks + col sub-proof) | **4.95 G** | $1{,}165\text{ s}$ ($19.4\text{ min}$, two passes) | **208 MB** | **37.4 s** | Peak VRAM $5.78\text{ GiB}$, host RSS $9.7\text{ GiB}$; all 9 tile/exponent tampering modes rejected |
-
-*(Adding items (v)–(vi) for $\mathbf W^r$ and stable configuration rows raises $\pi_{\mathrm{setup}}$ to $\approx 7.5\text{–}8\text{ G}$ cells `[Est]`; end-to-end hidden-weight GEMM + two-round reduction + HCO runs in $3.08\text{ M}$ cells on Apple M1 CPU synthetic layers with `int4` and tampered-$\mathbf W^r$ cheats rejected `[Meas]`.)*
+| **One-time static commitment** ($\mathsf C_W, \mathsf C_{\mathrm{raw}}, \mathsf C_{\mathrm{cfg}} \to \mathsf{model\_id}$, $R_{\max}=2048$ with $\mathbf W^r$ & `CFG0`/`CFG1`) | — | **$94.2\text{ s}$** (`W`: $31.3\text{ s}$, `RAW`: $34.7\text{ s}$) | **$7.62\text{ GB}$** coeff store ($0\text{ B}$ materialized codeword) | — | $574$ active rows ($G_i \in [14, 25]$) + $569$ radius rows; peak host RSS $12.0\text{ GiB}$ |
+| **Complete one-time setup proof $\pi_{\mathrm{setup}}$** (items (i)–(vi), 147 blocks + 206-col joint sub-proof) | **$8.67\text{ G}$** (`8,673,610,624`) | **$3{,}623.7\text{ s}$** ($60.4\text{ min}$, two passes) | **$353.0\text{ MB}$** | **$59.9\text{ s}$** (i7-14700F) / **$63.7\text{ s}$** (Apple M1) | Peak VRAM pool $3.54\text{ GiB}$, host RSS $12.2\text{ GiB}$; all 9 tile/exponent tampering modes rejected |
+| **Per-response `HCO` + `WSum` inside full 315-draw reply proof** (`16,384` claim slots, `123` hidden cols) | **$12.07\text{ M}$** (`HCO`) + **$34.46\text{ M}$** (`WSum`) | Included in $3{,}877.7\text{ s}$ full 5.25G-cell reply proof | $149.8\text{ MB}$ total reply proof | **$12.02\text{ s}$** (full reply proof) | `int4`-requantized weights and tampered configuration rows rejected $100\%$ |
 
 ### 4.2 Analytical Scaling to 70B Dense & 400B Sparse MoE `[Est]`
 

@@ -1,0 +1,61 @@
+{
+  "model": "Qwen3-0.6B",
+  "machine": "NVIDIA RTX 4070 Ti SUPER (16 GB VRAM) + Intel i7-14700F",
+  "params": {
+    "TO": 1024,
+    "TI": 1024,
+    "R_MAX": 2048,
+    "RATE_LOG": 2,
+    "MQ": 123,
+    "GROUP": 64,
+    "G_LO": 12
+  },
+  "rows_used": 574,
+  "raw_rows": 574,
+  "cfg_rows": true,
+  "n_params": 596049920,
+  "aliases": {
+    "lm_head.weight": "model.embed_tokens.weight"
+  },
+  "W": {
+    "n_rows": 574,
+    "radius_rows": 569,
+    "decode_s": 1.437,
+    "upload_s": 14.277,
+    "ntt_s": 1.911,
+    "sponge_s": 3.851,
+    "store_s": 10.434,
+    "merkle_s": 1.732,
+    "total_s": 31.295,
+    "row_ranges": [[0, 574], [1024, 1598]],
+    "codeword_bytes": 0,
+    "tree_bytes": 268435552,
+    "salt_bytes": 134217856,
+    "coeff_bytes": 4815060992
+  },
+  "RAW": {
+    "n_rows": 574,
+    "codeword_stored": false,
+    "decode_s": 0.774,
+    "upload_s": 9.125,
+    "ntt_s": 1.216,
+    "sponge_s": 3.413,
+    "store_s": 22.473,
+    "merkle_s": 0.064,
+    "total_s": 34.739,
+    "row_ranges": [[0, 574]],
+    "codeword_bytes": 0,
+    "tree_bytes": 268435552,
+    "salt_bytes": 134217856,
+    "coeff_bytes": 2407530496
+  },
+  "commit_total_s": 94.183,
+  "cd_row_exponents": {
+    "min": 14,
+    "max": 25,
+    "hist": {"14": 1, "21": 4, "22": 63, "23": 279, "24": 222, "25": 1}
+  },
+  "peak_rss_gib": 12.0,
+  "edim": 3,
+  "radius": true
+}

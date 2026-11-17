@@ -1,0 +1,72 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  docs-and-paper:
+    name: Lean Tags & Technical Report PDF
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Verify Lean tag resolution and PDF sync
+        run: python3 scripts/check_docs_and_tags.py
+      - name: Install tectonic
+        uses: wtfjoke/setup-tectonic@v3
+      - name: Build LaTeX & PDF with zero warnings
+        run: |
+          python3 paper/md2tex.py paper/flashprove-next.md "$RUNNER_TEMP/paper_build.tex"
+          tectonic "$RUNNER_TEMP/paper_build.tex" 2>&1 | tee "$RUNNER_TEMP/tectonic.log"
+          if grep -E "(^warning:|^error:)" "$RUNNER_TEMP/tectonic.log"; then
+            echo "FAIL: TeX warning or error in paper build"
+            exit 1
+          fi
+
+  cpu-verifier-and-demo:
+    name: Standalone CPU Verifier & Qwen3-0.6B Demo
+    runs-on: ubuntu-latest
+    env:
+      CUDA_VISIBLE_DEVICES: ""
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install minimal CPU dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[tokenizers]"
+      - name: Build C++ Goldilocks CPU accelerator
+        run: python -m flashprove_next.build_ext
+      - name: Run CPU verification & white-box forgery unit tests
+        env:
+          FPN_CI_FAST: "1"
+          FPN_OOC: "1"
+        run: python -m tests.test_fast_cpu
+      - name: Verify bundled Qwen3-0.6B proof artifacts on CPU
+        run: python demo/run_demo.py
+
+  lean4:
+    name: Lean 4.29.1 Formal Verification
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install elan
+        run: |
+          curl https://elan.lean-lang.org/elan-init.sh -sSf | sh -s -- -y --default-toolchain none
+          echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
+      - name: Fetch Mathlib cache and verify all 19 modules (0 sorry, standard axioms only)
+        working-directory: lean
+        run: |
+          lake exe cache get
+          bash check.sh

@@ -1,0 +1,221 @@
+{
+  "model": "Qwen/Qwen3-0.6B",
+  "engine": "vLLM 0.33.0 (CUDA graphs enabled, native bf16 + fp32 head)",
+  "machine": "NVIDIA GeForce RTX 4070 Ti SUPER (16.0 GiB) + Intel(R) Core(TM) i7-14700F (28 threads, 25.4 GiB RAM)",
+  "generated_utc": "2026-11-17T14:54:13Z",
+  "model_id": "665353c19c25c9e218944b0d83193bd63a16cc90755b2cdb84700ba8a8768e22",
+  "profile": "qwen3-0.6b-demo",
+  "security_tier": "demo_fast",
+  "M_C": 4,
+  "M_G": 2,
+  "T_pad": 256,
+  "note": "Reduced demo_fast budget (M_C=4, M_G=2) keeps bundles compact (~10.1 MiB) for seconds-scale laptop inspection and requires explicit --allow-reduced-security; production 2^-40 lifetime soundness uses qwen3-0.6b-sec315 (M_C=210, M_G=105 = 315 draws).",
+  "cases": {
+    "honest_hidden_cot": {
+      "proof_file": "qwen3_06b_honest_cot.proof",
+      "proof_bytes": 10623728,
+      "nonce": "8e84ba3b5d825b38b42258fa79fe8e0f",
+      "visible_text": "\n\nThe capital of France is Paris.",
+      "request": {
+        "messages": [
+          {
+            "role": "user",
+            "content": "What is the capital of France?"
+          }
+        ],
+        "max_tokens": 160,
+        "fpn": {
+          "thinking": true
+        }
+      },
+      "reply": {
+        "tokens": [
+          271,
+          785,
+          6722,
+          315,
+          9625,
+          374,
+          12095,
+          13,
+          151645
+        ],
+        "n_reason": 95,
+        "St_new": [
+          8981512275689442058,
+          17471941702417317257,
+          8044069159849375433,
+          2243613288722283353
+        ],
+        "finish_reason": "stop"
+      },
+      "verify_verdict": "VERIFIED",
+      "verify_cpu_s": 5.003
+    },
+    "honest_multiturn_turn1": {
+      "proof_file": "qwen3_06b_multiturn_turn1.proof",
+      "proof_bytes": 10627466,
+      "nonce": "c5232ed2b802d547208cf510a66d414f",
+      "visible_text": "Paris is the capital of France.",
+      "request": {
+        "messages": [
+          {
+            "role": "user",
+            "content": "What is the capital of France?"
+          },
+          {
+            "role": "assistant",
+            "content": "\n\nThe capital of France is Paris."
+          },
+          {
+            "role": "user",
+            "content": "Which country is that city in?"
+          }
+        ],
+        "max_tokens": 12,
+        "fpn": {
+          "thinking": false,
+          "turn": 1,
+          "St_prev": [
+            8981512275689442058,
+            17471941702417317257,
+            8044069159849375433,
+            2243613288722283353
+          ]
+        }
+      },
+      "reply": {
+        "tokens": [
+          59604,
+          374,
+          279,
+          6722,
+          315,
+          9625,
+          13,
+          151645
+        ],
+        "n_reason": 0,
+        "St_new": [
+          186508016558382826,
+          6790985725496869575,
+          7887966315376382966,
+          25300645855457089
+        ],
+        "finish_reason": "stop"
+      },
+      "verify_verdict": "VERIFIED",
+      "verify_cpu_s": 4.993
+    },
+    "honest_json_schema": {
+      "proof_file": "qwen3_06b_json_schema.proof",
+      "proof_bytes": 10832199,
+      "nonce": "8990493b0a350877c4d228b2afd86568",
+      "visible_text": "{\"city\":\"Paris\",\"capital\":true}",
+      "request": {
+        "messages": [
+          {
+            "role": "user",
+            "content": "Return JSON for France's capital."
+          }
+        ],
+        "max_tokens": 24,
+        "response_format": {
+          "type": "json_schema",
+          "json_schema": {
+            "name": "city_info",
+            "strict": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "city": {
+                  "enum": [
+                    "Paris",
+                    "Lyon",
+                    "Nice"
+                  ]
+                },
+                "capital": {
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "city",
+                "capital"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "fpn": {
+          "thinking": false
+        }
+      },
+      "reply": {
+        "tokens": [
+          4913,
+          8926,
+          788,
+          1,
+          59604,
+          1,
+          1335,
+          65063,
+          788,
+          1866,
+          92,
+          151645
+        ],
+        "n_reason": 0,
+        "St_new": [
+          3997294680265319548,
+          7527758845477444314,
+          9722931846922847656,
+          1111048744591065195
+        ],
+        "finish_reason": "stop"
+      },
+      "verify_verdict": "VERIFIED",
+      "verify_cpu_s": 5.162
+    },
+    "dishonest_int4_quantized": {
+      "proof_file": "qwen3_06b_int4_cheat.proof",
+      "proof_bytes": 10623531,
+      "nonce": "a5f6834a9e6e842d863faa48026f69b1",
+      "request": {
+        "messages": [
+          {
+            "role": "user",
+            "content": "Explain photosynthesis briefly."
+          }
+        ],
+        "max_tokens": 8,
+        "fpn": {
+          "thinking": false
+        }
+      },
+      "reply": {
+        "tokens": [
+          31772,
+          73667,
+          374,
+          279,
+          1882,
+          553,
+          892,
+          10779
+        ],
+        "n_reason": 0,
+        "St_new": [
+          2598664578927082304,
+          9659265027939433892,
+          17842971131847068613,
+          4184913583661585952
+        ],
+        "finish_reason": "length"
+      },
+      "verify_verdict": "REJECTED: sumcheck round mismatch (cube 2^12)",
+      "verify_cpu_s": 3.097
+    }
+  }
+}

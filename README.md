@@ -2,11 +2,12 @@
 
 **Verifiable Inference for Production LLM APIs**
 
-[![Stage](https://img.shields.io/badge/Release-Stage_0_Theory_%26_Formalization-0f766e)](#phased-release-roadmap)
-[![Lean 4](https://img.shields.io/badge/Lean_4.29.1-18_modules_·_194_declarations-2563eb)](lean/THEOREM.md)
-[![License](https://img.shields.io/badge/License-Apache_2.0-slate)](LICENSE)
+[![CI](https://github.com/s-JoL/FlashProve-Next/actions/workflows/ci.yml/badge.svg)](https://github.com/s-JoL/FlashProve-Next/actions/workflows/ci.yml)
+[![Stage](https://img.shields.io/badge/Release-Stage_1_End--to--End_Prover_%26_vLLM_Demo-0f766e)](#phased-release-roadmap)
+[![Lean 4](https://img.shields.io/badge/Lean_4.29.1-19_modules_·_219_declarations-2563eb)](lean/THEOREM.md)
+[![License](https://img.shields.io/badge/License-Apache_2.0-slategray)](LICENSE)
 
-English · [简体中文](README.zh-CN.md) · [Project Homepage (`docs/`)](docs/index.html) · [Reviewer Guide](REVIEW.md) · [Technical Report (PDF)](paper/flashprove-next.pdf)
+English · [简体中文](README.zh-CN.md) · [Project Homepage](https://s-jol.github.io/FlashProve-Next/) · [Reviewer Guide](REVIEW.md) · [Technical Report (PDF)](paper/flashprove-next.pdf)
 
 ---
 
@@ -14,53 +15,70 @@ English · [简体中文](README.zh-CN.md) · [Project Homepage (`docs/`)](docs/
 
 When you call a closed-weight language model API, you cannot tell what actually ran behind the endpoint: whether the provider routed your request to a smaller model under load, quantized a `bf16` checkpoint to `int4`, skipped layers, truncated the context window, or shortened a hidden system prompt to cut reasoning tokens.
 
-**FlashProve-Next** lets an API provider attach a publicly verifiable zero-knowledge proof to each response, proving that the reply came from the real model configuration the provider published—under two non-negotiable constraints:
+**FlashProve-Next** lets an API provider attach a publicly verifiable zero-knowledge proof to each response, proving that the reply came from the real model configuration published in `model_id`—under two non-negotiable constraints:
 
-1. **Leave production inference untouched.** No fixed-point surrogate model, no deterministic-integer rewrites, and no restrictions on serving optimizations. The engine runs its normal floating-point kernels (`bf16`/`fp8`), temperature and top-$p$ sampling, FlashAttention, CUDA Graph, continuous batching, prefix caching, tensor/pipeline/expert parallelism, and speculative decoding. Proof generation runs asynchronously in the background and never blocks streaming output.
-2. **Reveal nothing beyond the standard API.** Apart from what commercial APIs already return, the proof hides weights, layer count, width, whether the model is a Mixture-of-Experts and how it routes, deployed precision, hidden system prompts, and hidden chain-of-thought (CoT) text.
-
-### How It Works in Three Steps
-
-- **Commit once.** When deploying a model, the provider publishes a single cryptographic commitment `model_id` binding the real deployed weights, per-operator rounding bounds, hidden prompts, and sampling key, accompanied by a one-time setup proof. Weights are Reed–Solomon encoded once and opened inside later proofs without ever exposing static codeword symbols, so the commitment never wears out across the service lifetime.
-- **Sample and prove in the background.** During serving, read-only hooks record compact boundary summaries of operator inputs and outputs. After the reply finishes streaming, a background worker draws a cost-weighted random sample of blocks and generation steps (315 total at default security parameters) and proves in zero knowledge that each sampled block matches the committed weights within the rounding error allowed by its operator contract. Proving work scales with the sample count rather than total model depth.
-- **Verify on any CPU.** Anyone holding `model_id`, the request, the visible reply, and the proof can verify it on an ordinary laptop CPU in seconds, with zero access to weights or provider hardware.
-
-> **Current Release (`v0.2.0`, Stage 0):** This repository is published by verified stage. Stage 0 contains the bilingual overview ([`docs/`](docs/index.html)), the technical report ([`paper/flashprove-next.pdf`](paper/flashprove-next.pdf)), ten protocol specifications ([`specs/01`–`10`](specs/README.md)), the standalone machine-checked Lean 4 library ([`lean/`](lean/THEOREM.md)), and hardware measurements on real checkpoints ([`benchmarks/certified/`](benchmarks/certified/README.md)). Standalone verifier binaries, example proof bundles, and non-invasive vLLM integration code follow in Stage 1.
+1. **Leave production inference untouched.** No fixed-point surrogate model, no deterministic-integer rewrites, and no restrictions on serving kernels. The engine runs its normal floating-point arithmetic (`bf16`/`fp8` with `fp32` GEMM reductions), temperature and top-$p$ sampling, FlashAttention, CUDA Graphs, continuous batching, and prefix caching; proof generation runs asynchronously after the reply finishes streaming (see Section 1 below for measured online capture and background proving costs).
+2. **Reveal nothing beyond the standard API.** Apart from what commercial APIs already return, the proof hides weights, layer count, width, attention/MoE topology, deployed precision, hidden system prompts, hidden chain-of-thought (`CoT`) text, and encrypted multi-turn reasoning state.
 
 ---
 
-## Moving Beyond FlashProve
+## Verify Real `Qwen3-0.6B` Proofs on Any Laptop CPU (No GPU, No Model Weights)
 
-Anthropic's **[FlashProve](https://github.com/anthropics/FlashProve)** showed that trustless zero-knowledge proofs are possible for a closed-weight 400B MoE model without hardware enclaves (TEEs). It also made clear why a direct zkML approach cannot be turned on in production serving:
+Clone the repository and verify real zero-knowledge proof bundles generated by unsliced **`Qwen/Qwen3-0.6B`** (`L=28, d=1024, V=151,936`) served live on **`vLLM 0.33`** (`CUDA_VISIBLE_DEVICES=""` enforced automatically):
+
+```bash
+pip install -e ".[tokenizers]"
+python -m flashprove_next.build_ext   # optional C++ Goldilocks speedup; pure NumPy works too
+python demo/run_demo.py
+```
+
+`demo/run_demo.py` runs the standalone CPU verifier (`verifier/fpn_verify.py`) in a few seconds per proof against:
+- **Honest Turn-0 `Qwen3-0.6B` response with a hidden system prompt & hidden `<think>` CoT** $\rightarrow$ **`VERIFIED`** (without weights or secret CoT text);
+- **Honest Turn-1 multi-turn continuation** (chaining `St_prev -> St_new` across encrypted hidden history) $\rightarrow$ **`VERIFIED`**;
+- **Honest `Qwen3-0.6B` structured JSON response** (compiled byte-DFA vocabulary mask bound over $\mathbb F_{p^3}$) $\rightarrow$ **`VERIFIED`**;
+- **Dishonest `vLLM` server running `int4`-quantized weights behind the `bf16` `model_id`** $\rightarrow$ **`REJECTED`**;
+- **Security-downgrade & tampering checks** (omitting `--allow-reduced-security`, modified visible token, replayed nonce, tampered `St_prev`, unrequested schema injection) $\rightarrow$ **`REJECTED`**.
+
+*(Note: Bundled demo proofs use the reduced `qwen3-0.6b-demo` profile—4 compute + 2 generation draws, `demo_fast` tier—so files stay compact at ~10.1 MiB and verify in seconds; `fpn-verify` rejects reduced tiers by default unless `--allow-reduced-security` is passed. Full $2^{-40}$ lifetime soundness uses `qwen3-0.6b-sec315` with $210 + 105 = 315$ draws.)*
+
+---
+
+## How FlashProve-Next Differs from FlashProve
+
+Anthropic's **[FlashProve](https://github.com/anthropics/FlashProve)** showed that trustless zero-knowledge proofs are possible for a closed-weight 400B MoE model without hardware enclaves (TEEs). Its design choices—proving a deterministic integer surrogate across every layer—leave structural gaps when moving to live commercial API serving:
 
 | Dimension | FlashProve (2026-11) | FlashProve-Next |
 |---|---|---|
-| **What is committed** | A deterministic 4-bit integer surrogate (0 of 96 native-FP replies matched its exact policy) | The actual deployed checkpoint (`bf16`/`fp8`), rounding contract, hidden prompts, and sampling key |
-| **How inference runs** | Greedy or fixed-seed integer execution; vLLM stopped during full-size proving | Unchanged production serving (native FP, random sampling, FlashAttention, CUDA Graph, TP/PP/EP, speculative decoding) |
+| **What is committed** | A deterministic 4-bit integer surrogate model; native floating-point serving diverges from its exact-match policy | The actual deployed checkpoint (`bf16`/`fp8`), operator rounding bounds, hidden prompts, and sampling key |
+| **How inference runs** | Greedy or fixed-seed integer execution across all layers | Unchanged serving (native FP, random sampling, FlashAttention, CUDA Graph, continuous batching, prefix caching) |
 | **What stays private** | Weights only; depth, width, and MoE layout are public; no hidden prompts, CoT, or multi-turn state | Weights, depth, width, MoE/MLA/linear-attention layout, precision, hidden prompts, hidden CoT, and encrypted multi-turn state |
-| **Commitment lifetime** | Wears out after 688,127 batches and must be replaced under an unlinked ID | Never wears out across unbounded proofs (static RS commitment + in-circuit hidden column openings) |
-| **Proving cost structure** | Proves every layer of every token (~72–94× per-GPU prefill time on H100) | Proves a fixed cost-weighted sample ($3 \times 105 = 315$ draws for $Q=2^{64}, \varepsilon \le 2^{-40}$), decoupled from layer count |
+| **Commitment lifetime** | Wears out after 688,127 batches and must be replaced under an unlinked ID | Does not wear out with the number of proofs (static RS commitment + in-circuit hidden column openings; soundness stated over $Q \le 2^{64}$ lifetime queries) |
+| **Proving cost structure** | Proves every layer of every token (≈71–93× per-GPU prefill time vs. 8×H100 FP8 vLLM) | Proves a fixed cost-weighted sample ($3 \times 105 = 315$ draws for $Q=2^{64}, \varepsilon \le 2^{-40}$), decoupled from layer count |
 
 ---
 
-## What Is Proved and Measured Today
+## What Is Built, Proved, and Measured Today (`Stage 1 · v0.3.0`)
 
-We strictly separate what is machine-checked in Lean 4, what is measured on GPU hardware, and what remains on paper or in progress:
+We strictly separate what is demonstrated end-to-end on GPU hardware, what is machine-checked in Lean 4, and what remains open for Stage 2:
 
-### 1. Machine-Checked in Lean 4 (`lean/`, 18 Modules, 194 Declarations, Zero `sorry`)
+### 1. End-to-End Prover, Standalone CPU Verifier & Live `vLLM 0.33` Prototype (`RTX 4070 Ti SUPER 16 GB, 25 GB RAM`)
+- **Full-checkpoint `Qwen3-0.6B` 315-draw zero-knowledge reply proof ($\mathbb F_{p^3}$):** Proves `210` compute draws + `105` generation draws (**`5.25 billion` cells**, hidden system prompt + user request + 116-token hidden `<think>` CoT + visible reply) within **`21.00 GiB` peak host RSS** (`1.51 B/cell` streaming witness, `0 B` disk spill, `6,887` batched vectors; see [`benchmarks/prover/`](benchmarks/prover/README.md) for full phase timings). GPU proving takes `3,877.7 s` (`149.8 MB` proof), and isolated CPU verification finishes in **`12.02 s`**.
+- **One-time `Qwen3-0.6B` static commitment & setup proof $\pi_{\rm setup}$:** Commits all 596M parameters, radius matrix $\mathbf W^r$, and stable configuration rows in **`94.2 s`** (`7.62 GB` coefficient store, zero materialized codeword) and proves items (i)–(vi) across **`8.67 billion` cells** in `3,623.7 s` (`59.9 s` CPU verify).
+- **Non-invasive `vLLM 0.33` serving & 33 white-box forgery/tamper checks:** Registers via `vLLM`'s `@register_model_loader` API with `torch.ops.fpn.port` inside `FULL_AND_PIECEWISE` CUDA graphs (**0 Python callbacks on replay**). Enforcing `fp32` GEMM reductions (`R32`) and an `fp32` LM head costs **`1.2%–2.7%`** `vLLM` throughput across batch 1–32 (while the Stage 1 synchronous per-step D2H port harvester reduces decode throughput by **`53%–85%`** prior to async double-buffering). Nine live API scenarios verify end to end, and **all 33 white-box forgery and tamper checks** (`21` in `test_reply_zk.py` + `12` in `test_api_zk.py`) plus live `int4` server downgrades are `REJECTED`.
+
+### 2. Machine-Checked in Lean 4 (`lean/`, 19 Modules, 219 Declarations, Zero `sorry`)
 Verified on Lean `4.29.1` + Mathlib using only Lean's three standard axioms (`propext`, `Classical.choice`, `Quot.sound`):
-- **Lifetime soundness against adaptive grinding (`RoundByRound`, `LifetimeSoundness`, `ProtocolBridge`):** Over $Q \le 2^{64}$ adaptive random-oracle queries across the entire service lifetime, no response whose bad-computation cost share reaches $\sigma=0.5$ or whose invalid-sampling share reaches $\rho=0.5$ is accepted with probability greater than $2^{-40}$, using $k=105$ draws per pool ($315$ total across prompt compute, generation compute, and token sampling). Includes the exact $p^4$-denominator straight-line extraction bound, concrete $\mathbb F_{p^3}$ Sumcheck and column-query escape bounds, and the formal `hpath` reduction from protocol specifications.
-- **Completeness of bucketed temperature / top-$p$ sampling (`BucketSampling`):** Proves that our sort-free integer bucketed sampler (`fpn-samp-bk-v3`) and its witness-free nucleus envelope accept every honest engine token across all temperatures $T>0$ and $p_{\rm top}\in(0,1]$ (ties and underflow included), and that the boundary-pair circuit check has zero prover slack.
-- **Zero-knowledge masking & production equivalences (`MaskJoint`, `Gadgets`, `Speculative`, `LinearAttn`, `ArchGeneral`):** Proves causal multi-round transcript uniformity (`multiround_independent_causal`), Libra sumcheck mask bijections, componentwise MoE Top-$K$ routing bounds, exact equivalence of coupled speculative decoding against any untrusted draft model, and exact ring identities for Multi-head Latent Attention (MLA), chunked linear attention, and pipeline/expert parallelism.
+- **Round-by-round lifetime soundness composition (`RoundByRound`, `LifetimeSoundness`, `ProtocolBridge`):** Proves that given a round-by-round decomposition of the protocol (`ProtocolRBRSpec`) whose per-round escape densities satisfy the stated bounds (spot-check miss $\le 2^{-105}$ at $3 \times 105 = 315$ draws, algebraic/query escapes $\le 2^{-106}$), the bad-accept event has probability $\le 2^{-40}$ over $Q \le 2^{64}$ adaptive queries (`fpn_protocol_lifetime_soundness`), alongside all 16 sample-count table cells and $\mathbb F_{p^3}$ / $p^4$ arithmetic bounds. (That the deployed Python circuit satisfies `ProtocolRBRSpec`, and Basefold proximity soundness `A-PCS`, are argued on paper.)
+- **Sort-free bucketed sampling & $\mathbb F_{p^3}$ constrained-mask binding (`BucketSampling`, `ConstrainedMask`):** Proves completeness of `fpn-samp-bk-v3` and its witness-free nucleus sandwich across all $T>0$ and $p_{\rm top}\in(0,1]$, zero-slack boundary-pair circuit equivalence, and multilinear Schwartz–Zippel soundness ($\le v_b / |\mathbb E| \le 2^{-186}$) for $O(k_2 Q_{\rm pad})$-cell JSON-Schema byte-DFA vocabulary masks.
+- **Zero-knowledge masking & modern architecture equivalences (`MaskJoint`, `Gadgets`, `Speculative`, `LinearAttn`, `ArchGeneral`):** Proves causal multi-round transcript uniformity (`multiround_independent_causal`), Libra sumcheck bijections, pairwise MoE Top-$K$ routing, coupled speculative decoding (`specLoop_eq_seqGen`), and algebraic identities for absorbed MLA, chunked linear attention, and pipeline/expert parallelism.
 
-### 2. Measured on Real Models (`benchmarks/certified/`, NVIDIA RTX 4070 Ti SUPER 16 GB)
-- **Zero false rejections on honest native-FP inference:** Across **249,384** blocks of `Qwen3-0.6B` and **143,544** blocks of `Llama-3.2-1B-Instruct` (`bf16` with `fp32` cuBLAS reductions and FlashAttention-2), **0 blocks** exceeded their certified error radius. The same test caught a real contract violation in PyTorch's default `bf16` split-K prefill reduction (up to 39× above the `fp32`-accumulation bound), motivating our explicit contract cap.
-- **Detection of realistic cost-saving cheats:** Across all **8 tested cheat modes** on `Qwen3-0.6B`—cross-model substitution (`Qwen2.5-0.5B`), `int4` quantization, same-weight `fp8 W8A16`, `fp8 W8A8`, low-rank pruning, naive odd-layer skipping, zero-operand layer skipping, and sliding-window KV truncation—sublayer lineage accounting ($h=3$) flags **97.3%–100%** of computation cost as bad (well above $\sigma=0.5$). By contrast, checking only layer boundaries misses same-weight `fp8` (3.3%) and KV truncation (0%).
-- **Explicit bound on undetectable sparse-attention tail dropping:** Dropping ultra-low-probability attention keys whose total effect is smaller than `bf16` rounding cannot be rejected without rejecting honest kernels. An omniscient oracle benchmark on `Qwen3-4B` bounds this saving at **12.4%–55.1%** across 4k–32k context, or **5.9%–36.6%** when FlashAttention's scalar log-sum-exp (LSE) is also recorded. Each `model_id` publishes this bound per context length rather than claiming to prevent sub-rounding drops.
+### 3. Calibrated on Real Native-FP Checkpoints (`benchmarks/certified/`)
+- **Zero honest false rejections:** **0 / 249,384** bad blocks on `Qwen3-0.6B` and **0 / 143,544** on `Llama-3.2-1B-Instruct` (`bf16` + FlashAttention-2 + `fp32` cuBLAS reductions), while catching PyTorch's default `bf16` split-K prefill contract violation (up to $39\times$).
+- **Realistic cheat detection & tail bounds:** **97.3%–100%** bad-cost share flagged across 8 cost-saving cheats on `Qwen3-0.6B`, and explicit 4k–32k sparse-attention tail bounds (**5.9%–36.6%** with scalar `LSE`) on `Qwen3-4B`.
 
-### 3. On Paper / Open for Subsequent Stages
-- Basefold unique-decoding proximity soundness (`A-PCS`), mechanical extraction linking concrete circuit-builder code to Lean's `CompiledCS`, multi-proof ROM programming hybrids, and real-valued floating-point propagation proofs are established on paper (`specs/02`–`07`).
-- Floating-point error propagation for parallel prefix scans in linear-attention layers (`Scan`) and empirical kernel calibration on Hopper/Blackwell FP8 tensor cores, TPUs, and Trainium remain open.
+### 4. Current Prototype Gap & Stage 2 Focus
+- **Proving & capture speed:** Full 315-draw GPU proving on one consumer RTX 4070 Ti SUPER currently takes `3,877.7 s` (~`1,009×` single-stream inference, dominated by Basefold openings and $2^{24}\dots 2^{26}$ streaming sumchecks), and the Stage 1 reference harvester uses synchronous per-step D2H copies (`−53%..−85%` throughput). Double-buffered async CUDA copy streams and batched Basefold openings target Stage 2.
+- **Multi-architecture circuits & formal boundaries:** Stage 2 generalizes dense `GQA + QK-Norm` ($h=1$ key-producer lineage) into uniform primitive slots wired by hidden configuration tables with $h=3$ sublayer lineages (covering MoE, MLA, sliding-window, and linear attention under one verifier); Basefold proximity soundness (`A-PCS`), mechanical Python-to-Lean circuit extraction, and the `Scan` error template remain on paper (`specs/02`–`07`).
 
 ---
 
@@ -68,44 +86,43 @@ Verified on Lean `4.29.1` + Mathlib using only Lean's three standard axioms (`pr
 
 | Stage | Deliverables | Status |
 |---|---|---|
-| **Stage 0 (`v0.2.0`)** | Technical report, formal protocol specifications (`01`–`10`), standalone Lean 4.29.1 proof library (18 modules / 194 declarations), GPU tolerance & cheat benchmarks, bilingual portal | **Released** |
-| **Stage 1** | Standalone CPU verifier CLI, full-model proof bundles (honest `ACCEPT` + 7-class cheat `REJECT`), interactive browser demo, and non-invasive vLLM 0.33 + GPU prover prototype | *In progress* |
-| **Stage 2** | Unified multi-architecture support (Dense GQA, Sparse MoE, MLA, Linear Attention), byte-level open spec & test vectors, amortized cluster overhead benchmarks toward $\le 5\%$ | *Planned* |
+| **Stage 0 (`v0.2.0`)** | Technical report, formal protocol specifications (`01`–`10`), standalone Lean 4.29.1 library, GPU tolerance & cheat benchmarks, bilingual portal | **Released** |
+| **Stage 1 (`v0.3.0`)** | End-to-end $\mathbb F_{p^3}$ streaming prover (`1.51 B/cell`), full `Qwen3-0.6B` setup & 315-draw reply proofs, standalone CPU verifier CLI (`fpn-verify`), offline `Qwen3-0.6B` laptop demo, non-invasive `vLLM 0.33` CUDA-graph integration, 19th Lean module (`ConstrainedMask`) | **Released** |
+| **Stage 2** | Uniform hidden-table multi-architecture slots (MoE, MLA, SWA, Linear Attention), double-buffered async capture toward $\le 5\%$ online overhead & batched openings for lower proving cost, open byte-level test vectors | *Planned* |
 
 ---
 
-## Repository Layout & Verification
+## Repository Layout & Verification Commands
 
 ```text
 FlashProve-Next/
 ├── README.md                 # English overview
 ├── README.zh-CN.md           # Chinese overview (中文导读)
-├── REVIEW.md                 # Short reviewer guide, trusted base & paper-to-Lean map
+├── REVIEW.md                 # Reviewer guide, trusted base & paper-to-Lean-to-code map
 ├── CHANGELOG.md              # Release history by stage
-├── docs/                     # Bilingual web portal + PDF download
+├── NOTICE                    # License & third-party notices
+├── flashprove_next/          # Core F_{p^3} streaming prover, gadgets, sampling & bundle verifier
+├── verifier/fpn_verify.py    # Standalone CPU verifier CLI (NumPy + stdlib/cryptography)
+├── demo/                     # Offline laptop CPU demo with real Qwen3-0.6B bundles
+├── integrations/vllm/        # Non-invasive vLLM 0.33 loader plugin, CUDA-graph capture & daemon
+├── tests/                    # Fast CPU CI subset (`test_fast_cpu.py`) + 33 forgery/tamper tests
+├── lean/                     # Standalone Lean 4.29.1 + Mathlib formalization (19 modules, 0 sorry)
 ├── paper/                    # Technical report (Markdown source, TeX, compiled PDF)
 ├── specs/                    # Ten protocol & security specifications (01–10)
-├── lean/                     # Standalone Lean 4.29.1 + Mathlib formalization (18 modules)
-└── benchmarks/certified/     # Empirical tolerance & cheat-detection tables and raw JSON
+├── benchmarks/               # Certified-tolerance & end-to-end prover benchmarks and JSONs
+└── docs/                     # Bilingual web portal + PDF download
 ```
 
-### Check the Lean 4 Proofs
-
-Requires [`elan`](https://github.com/leanprover/elan) (automatically selects Lean `4.29.1` via `lean/lean-toolchain`):
-
 ```bash
-cd lean
-lake exe cache get
-bash check.sh
-```
+# 1. Verify bundled Qwen3-0.6B proof artifacts & run fast CPU tests (no GPU needed)
+python -m flashprove_next.build_ext
+python demo/run_demo.py
+FPN_CI_FAST=1 python -m tests.test_fast_cpu
 
-Expected final line: `OK: all 18 modules verified, no sorry, only standard axioms`.
+# 2. Verify all 19 Lean 4.29.1 modules (0 sorry, standard axioms only)
+cd lean && lake exe cache get && bash check.sh
 
-### Rebuild the Technical Report PDF
-
-Requires Python 3 and [`tectonic`](https://tectonic-typesetting.github.io/):
-
-```bash
+# 3. Rebuild Technical Report PDF (0 errors / warnings)
 python3 paper/md2tex.py paper/flashprove-next.md paper/flashprove-next.tex
 cd paper && tectonic flashprove-next.tex
 ```

@@ -1,16 +1,17 @@
 #!/usr/bin/env bash
-# Build and axiom-audit all 18 FlashProve-Next Lean 4 modules (Lean 4.29.1 + Mathlib).
+# Build and axiom-audit all 19 FlashProve-Next Lean 4 modules (Lean 4.29.1 + Mathlib).
 # Standard usage (standalone clone):
 #   cd lean && lake exe cache get && bash check.sh
 # Optional fast mode reusing an existing Mathlib Lake build:
 #   MATHLIB_LAKE_DIR=/path/to/prebuilt/lean bash check.sh
 set -euo pipefail
+[ -d "$HOME/.elan/bin" ] && export PATH="$HOME/.elan/bin:$PATH"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 LOG="$(mktemp)"
 trap 'rm -f "$LOG"' EXIT
 
-MODULES="SpotCheck StdAlg Mask Sumcheck StdAlgOps MaskJoint SumcheckSound Grinding LogUp Gadgets BoundedLift Speculative LinearAttn ArchGeneral LifetimeSoundness RoundByRound BucketSampling ProtocolBridge"
+MODULES="SpotCheck StdAlg Mask Sumcheck StdAlgOps MaskJoint SumcheckSound Grinding LogUp Gadgets BoundedLift Speculative LinearAttn ArchGeneral LifetimeSoundness RoundByRound BucketSampling ProtocolBridge ConstrainedMask"
 
 if [ -n "${MATHLIB_LAKE_DIR:-}" ]; then
   O="${SCRIPT_DIR}/.olean"

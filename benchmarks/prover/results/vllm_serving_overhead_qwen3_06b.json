@@ -1,0 +1,28 @@
+{
+  "model": "Qwen3-0.6B",
+  "engine": "vLLM 0.33.0 (CUDA graphs enabled, enable_prefix_caching=True)",
+  "machine": "NVIDIA RTX 4070 Ti SUPER (16 GB VRAM) + Intel i7-14700F (28 threads, 25 GB RAM)",
+  "batches": {
+    "1": {
+      "stock_tok_s": 356.1,
+      "numerics_r32_tok_s": 351.8,
+      "numerics_r32_delta_pct": -1.21,
+      "full_zk_capture_tok_s": 165.9,
+      "full_zk_capture_delta_pct": -53.41
+    },
+    "8": {
+      "stock_tok_s": 2379.1,
+      "numerics_r32_tok_s": 2325.7,
+      "numerics_r32_delta_pct": -2.24,
+      "full_zk_capture_tok_s": 732.5,
+      "full_zk_capture_delta_pct": -69.21
+    },
+    "32": {
+      "stock_tok_s": 8467.7,
+      "numerics_r32_tok_s": 8236.0,
+      "numerics_r32_delta_pct": -2.74,
+      "full_zk_capture_tok_s": 1304.8,
+      "full_zk_capture_delta_pct": -84.59
+    }
+  }
+}

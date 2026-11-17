@@ -1,0 +1,50 @@
+{
+  "model": "Qwen3-0.6B",
+  "machine": "NVIDIA RTX 4070 Ti SUPER (16 GB VRAM) + Intel i7-14700F (prover) + Apple M1 (standalone CPU verifier)",
+  "version": "fpn-mcsetup-1",
+  "edim": 3,
+  "params": {
+    "TO": 1024,
+    "TI": 1024,
+    "R_MAX": 2048,
+    "RATE_LOG": 2,
+    "MQ": 123,
+    "GROUP": 64,
+    "G_LO": 12
+  },
+  "setup": {
+    "MQS": 206,
+    "SR_BITS": 3,
+    "DELTA": 0.3,
+    "RADIUS": true,
+    "CFG_ROWS": true,
+    "GBITS": 4
+  },
+  "rows_used": 1598,
+  "blocks": 147,
+  "blocks_proven_pass2": 147,
+  "prove_wall_s": 3623.7,
+  "peak_rss_gib": 12.2,
+  "vram_pool_peak_gib": 3.535,
+  "vram_nvidia_smi_peak_gib": 4.211,
+  "proof_bytes": 352960042,
+  "violations": 0,
+  "standalone_verify_i7_14700f": {
+    "machine": "Intel i7-14700F (isolated CPU-only CUDA_VISIBLE_DEVICES=\"\" -I)",
+    "status": "VERIFIED",
+    "wall_s": 59.913,
+    "col_s": 9.042,
+    "rss_gib": 5.844
+  },
+  "standalone_verify_apple_m1": {
+    "machine": "Apple M1",
+    "status": "VERIFIED",
+    "wall_s": 63.71,
+    "col_s": 8.981,
+    "blocks_mean_s": 0.372,
+    "rss_gib": 4.312
+  },
+  "summary_pass1": {"blocks": 147, "total_s": 770.75},
+  "summary_col": {"witness_s": 33.4, "s": 39.9, "cells": 39322176, "pool_peak_gib": 3.535, "proof_bytes": 1591495, "violations": []},
+  "summary_pass2": {"blocks": 147, "total_s": 2810.31, "cells_block0": 59645376, "cells_block_rest": 58730432, "total_cells": 8673610624, "pool_peak_gib": 3.281}
+}
