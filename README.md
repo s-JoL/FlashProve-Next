@@ -45,13 +45,14 @@ python demo/run_demo.py
 
 ## How FlashProve-Next Differs from FlashProve
 
-Anthropic's **[FlashProve](https://github.com/anthropics/FlashProve)** showed that trustless zero-knowledge proofs are possible for a closed-weight 400B MoE model without hardware enclaves (TEEs). Its design choices—proving a deterministic integer surrogate across every layer—leave structural gaps when moving to live commercial API serving:
+Anthropic's **[FlashProve](https://github.com/anthropics/FlashProve)** showed that trustless zero-knowledge proofs are possible for a closed-weight 400B MoE model without hardware enclaves (TEEs). FlashProve proves exact deterministic execution of an integer surrogate across every layer, whereas FlashProve-Next makes a different set of trade-offs targeted at native floating-point API serving:
 
 | Dimension | FlashProve (2026-11) | FlashProve-Next |
 |---|---|---|
+| **Soundness guarantee** | Exact full-layer execution of the committed 4-bit integer model | Cost-weighted spot-check threshold relation ($\sigma = \rho = 0.5$, bad-accept $\le 2^{-40}$ over $Q \le 2^{64}$) |
 | **What is committed** | A deterministic 4-bit integer surrogate model; native floating-point serving diverges from its exact-match policy | The actual deployed checkpoint (`bf16`/`fp8`), operator rounding bounds, hidden prompts, and sampling key |
-| **How inference runs** | Greedy or fixed-seed integer execution across all layers | Unchanged serving (native FP, random sampling, FlashAttention, CUDA Graph, continuous batching, prefix caching) |
-| **What stays private** | Weights only; depth, width, and MoE layout are public; no hidden prompts, CoT, or multi-turn state | Weights, depth, width, MoE/MLA/linear-attention layout, precision, hidden prompts, hidden CoT, and encrypted multi-turn state |
+| **How inference runs** | Greedy or fixed-seed integer execution across all layers | Native FP (`fp32` GEMM reductions), random sampling, FlashAttention, CUDA Graph, continuous batching, prefix caching |
+| **What stays private** | Weights only; depth, width, and MoE layout are public; no hidden prompts, CoT, or multi-turn state | Weights, hidden prompts, hidden CoT, and encrypted multi-turn state (Stage 1: dense `Qwen3-0.6B`; hidden-table topology privacy in Stage 2) |
 | **Commitment lifetime** | Wears out after 688,127 batches and must be replaced under an unlinked ID | Does not wear out with the number of proofs (static RS commitment + in-circuit hidden column openings; soundness stated over $Q \le 2^{64}$ lifetime queries) |
 | **Proving cost structure** | Proves every layer of every token (≈71–93× per-GPU prefill time vs. 8×H100 FP8 vLLM) | Proves a fixed cost-weighted sample ($3 \times 105 = 315$ draws for $Q=2^{64}, \varepsilon \le 2^{-40}$), decoupled from layer count |
 

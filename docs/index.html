@@ -459,8 +459,8 @@
           <span class="zh">与 FlashProve 的设计对比</span>
         </h2>
         <p class="section-lead">
-          <span class="en">Anthropic's FlashProve demonstrated that zero-knowledge proofs can verify a closed-weight 400B MoE model without hardware enclaves. FlashProve-Next addresses the structural gaps that keep full-layer integer-surrogate proving out of live API serving.</span>
-          <span class="zh">Anthropic 的 FlashProve 证明了不靠硬件飞地（TEE）也能验证 400B 闭源模型，但其采用的“定点整数替身 + 全层重算”难以直接用于在线服务。FlashProve-Next 针对这些障碍给出了对应设计。</span>
+          <span class="en">Anthropic's FlashProve demonstrated that zero-knowledge proofs can verify a closed-weight 400B MoE model without hardware enclaves. FlashProve proves exact full-layer execution of an integer surrogate, while FlashProve-Next makes different trade-offs targeted at native floating-point API serving.</span>
+          <span class="zh">Anthropic 的 FlashProve 证明了不靠硬件飞地（TEE）也能验证 400B 闭源模型。FlashProve 证明确定性整数替身模型的逐层精确执行，而 FlashProve-Next 面向原生浮点在线服务做出了不同的设计取舍。</span>
         </p>
 
         <table>
@@ -472,6 +472,11 @@
             </tr>
           </thead>
           <tbody>
+            <tr>
+              <td><strong><span class="en">Soundness guarantee</span><span class="zh">可靠性保证</span></strong></td>
+              <td><span class="en">Exact full-layer execution of the committed 4-bit integer model</span><span class="zh">已承诺 4-bit 整数替身模型的逐层精确执行</span></td>
+              <td><span class="en">Cost-weighted spot-check threshold relation (<code>σ = ρ = 0.5</code>, bad-accept <code>≤ 2^-40</code> over <code>Q ≤ 2^64</code>)</span><span class="zh">原生浮点轨迹的成本加权抽查阈值关系（默认 <code>σ = ρ = 0.5</code>，<code>Q ≤ 2^64</code> 下坏接受 <code>≤ 2^-40</code>）</span></td>
+            </tr>
             <tr>
               <td><strong><span class="en">What is committed</span><span class="zh">承诺对象</span></strong></td>
               <td><span class="en">A 4-bit deterministic integer surrogate model; native floating-point serving diverges from its exact-match policy</span><span class="zh">4-bit 确定性整数替身模型；线上原生浮点推理会偏离其精确匹配策略</span></td>
