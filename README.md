@@ -1,13 +1,13 @@
 # FlashProve-Next
 
-**Verifiable Inference for Production LLM APIs**
+**Verifiable Inference for Production LLM APIs.** By Liang Song.
 
 [![CI](https://github.com/s-JoL/FlashProve-Next/actions/workflows/ci.yml/badge.svg)](https://github.com/s-JoL/FlashProve-Next/actions/workflows/ci.yml)
 [![Stage](https://img.shields.io/badge/Release-Stage_1_End--to--End_Prover_%26_vLLM_Demo-0f766e)](#phased-release-roadmap)
 [![Lean 4](https://img.shields.io/badge/Lean_4.29.1-19_modules_·_219_declarations-2563eb)](lean/THEOREM.md)
 [![License](https://img.shields.io/badge/License-Apache_2.0-slategray)](LICENSE)
 
-English · [简体中文](README.zh-CN.md) · [Project Homepage](https://s-jol.github.io/FlashProve-Next/) · [Reviewer Guide](REVIEW.md) · [Technical Report (PDF)](paper/flashprove-next.pdf)
+English · [简体中文](README.zh-CN.md) · [Project Homepage](https://s-jol.github.io/FlashProve-Next/) · [Reviewer Guide](REVIEW.md) · [Technical Report (PDF)](paper/flashprove-next.pdf) · [Specifications (`01`–`10`)](specs/README.md)
 
 ---
 
@@ -54,6 +54,15 @@ Anthropic's **[FlashProve](https://github.com/anthropics/FlashProve)** showed th
 | **What stays private** | Weights only; depth, width, and MoE layout are public; no hidden prompts, CoT, or multi-turn state | Weights, depth, width, MoE/MLA/linear-attention layout, precision, hidden prompts, hidden CoT, and encrypted multi-turn state |
 | **Commitment lifetime** | Wears out after 688,127 batches and must be replaced under an unlinked ID | Does not wear out with the number of proofs (static RS commitment + in-circuit hidden column openings; soundness stated over $Q \le 2^{64}$ lifetime queries) |
 | **Proving cost structure** | Proves every layer of every token (≈71–93× per-GPU prefill time vs. 8×H100 FP8 vLLM) | Proves a fixed cost-weighted sample ($3 \times 105 = 315$ draws for $Q=2^{64}, \varepsilon \le 2^{-40}$), decoupled from layer count |
+
+### Four Core Mechanisms
+
+1. **Non-depleting static RS commitment & in-circuit hidden column openings (`HCO`):** Deployed weights, radius matrices, hidden prompts, and the sampling key are committed once via Reed–Solomon column trees into `model_id` alongside a one-time setup proof $\pi_{\rm setup}$ ([`specs/09`](specs/09-modelcommit.md)). Per response, touched GEMM tiles are authenticated through two-round tile reductions and freshly blinded in-circuit column openings—eliminating static codeword wear-out across unbounded queries.
+2. **Single-hop local rounding contracts & lineage cost accounting:** Instead of re-executing an integer surrogate end-to-end (where native `bf16`/`fp8` drift causes honest proof refusals that leak hidden activations), read-only hooks commit boundary tensors and the prover checks $3 \times 105 = 315$ Fiat–Shamir cost-weighted draws against a *single-hop* local reference evaluated on the engine's own committed inputs, paired with forward box-plus-ball rounding radii and consumer-lineage billing ([`specs/06`](specs/06-numerics-cheats.md)). Error radii stay at single-operator rounding scale with zero cross-layer blowup.
+3. **Sort-free bucketed sampling & $\mathbb F_{p^3}$ constrained-mask binding:** Replaces $O(V \log V)$ vocabulary sorting and per-token PRF calls with 32-token buckets and a witness-free integer top-$p$ sandwich (`sure`/`poss`), while enforcing compiled JSON-Schema byte-DFA masks across a 151,936-token vocabulary in $O(k_2 Q_{\rm pad})$ cells via multilinear Schwartz–Zippel ($\le 2^{-186}$; [`BucketSampling.lean`](lean/FlashProveNext/BucketSampling.lean), [`ConstrainedMask.lean`](lean/FlashProveNext/ConstrainedMask.lean)).
+4. **Per-request KV matrix commitment & `1.51 B/cell` streaming $\mathbb F_{p^3}$ prover:** Eliminates online GPU hashing via a post-hoc KV matrix commitment and two-stage hidden-selection sumcheck (`210` attention draws proved in `5.8 s`; [`specs/10`](specs/10-trajectory-commit.md)), while cross-slot batching (`~1.52M` $\to$ `6,887` vectors) and on-the-fly AES-256-CTR blinding fit a `5.25 billion`-cell proof into `21.0 GiB` host RAM with zero disk spill.
+
+> **Fast reviewer entry ([`REVIEW.md`](REVIEW.md)):** (1) Run `python demo/run_demo.py` on any laptop CPU (~20 s, no GPU or weights); (2) inspect the 5 top-level theorem signatures in [`lean/FlashProveNext.lean`](lean/FlashProveNext.lean) (`SumcheckSound`, `ConstrainedMask`, `BucketSampling`, `MaskJoint`, `ProtocolBridge`) and run `cd lean && bash check.sh`; (3) read Sections 1–2 & 8 of [`paper/flashprove-next.pdf`](paper/flashprove-next.pdf).
 
 ---
 

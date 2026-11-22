@@ -1,6 +1,6 @@
 # FlashProve-Next
 
-**面向生产级大模型 API 的可验证推理**
+**面向生产级大模型 API 的可验证推理**　作者：宋亮（Liang Song）
 
 [![CI](https://github.com/s-JoL/FlashProve-Next/actions/workflows/ci.yml/badge.svg)](https://github.com/s-JoL/FlashProve-Next/actions/workflows/ci.yml)
 [![Stage](https://img.shields.io/badge/当前版本-Stage_1_端到端证明器与_vLLM_演示-0f766e)](#分阶段发布路线)
@@ -54,6 +54,13 @@ Anthropic 的 **[FlashProve](https://github.com/anthropics/FlashProve)** 验证�
 | **隐私边界** | 只藏权重；层数、宽度、MoE 结构公开；无隐藏提示词、隐藏 CoT 或多轮状态 | 权重、层数、宽度、MoE/MLA/线性注意力结构、精度、隐藏提示词、隐藏 CoT 与跨轮状态全部隐藏 |
 | **承诺寿命** | 掩码权重表最多用 688,127 个批次就彻底耗尽，换新 ID 后无法公开关联 | 出证次数不会耗尽承诺（静态编码一次 + 电路内秘密打开列；可靠性覆盖全生命周期 $Q \le 2^{64}$ 次查询） |
 | **出证开销结构** | 逐层全量重证（单张 H100 耗时约为 8×H100 FP8 vLLM 预填充的 71–93 倍） | 按算力成本加权随机抽查（默认三池共 315 次，覆盖 $2^{64}$ 次查询下 $\le 2^{-40}$ 防伪造界），与总层数解耦 |
+
+### 四项核心设计机制
+
+1. **永不耗尽的静态 RS 模型承诺与电路内秘密列打开（`HCO`）**：上线时用 Reed–Solomon 列树将真实权重、误差半径矩阵、隐藏提示词与采样密钥一次性承诺为 `model_id` 并附设置证明 $\pi_{\rm setup}$（[`specs/09`](specs/09-modelcommit.md)）；后续每次回复证明在电路内以新鲜盲化秘密打开命中的矩阵分片，彻底消除静态掩码表随查询次数耗尽的问题。
+2. **单跳局部浮点舍入合约与谱系成本计费**：不做逐层整数替身重算（原生浮点与整数替身一旦在采样边界分叉就会导致诚实服务拒证，进而泄露隐藏激活信息），而是由只读钩子承诺算子边界张量，对 Fiat–Shamir 抽中的 $3 \times 105 = 315$ 个样本按引擎自身的承诺输入做**单跳局部参考检验**并传播算子级舍入半径（[`specs/06`](specs/06-numerics-cheats.md)），误差不会跨层累积放大。
+3. **免排序 32 词分桶采样与 $\mathbb F_{p^3}$ 约束解码掩码绑定**：用 32 词分桶和免见证整数核夹逼（`sure`/`poss`）替代全词表排序，并通过 $\mathbb F_{p^3}$ 多线性 Schwartz–Zippel（伪造通过率 $\le 2^{-186}$）在 $O(k_2 Q_{\rm pad})$ 格内绑定 JSON Schema 最小字节自动机的 151,936 全词表掩码（[`BucketSampling.lean`](lean/FlashProveNext/BucketSampling.lean)、[`ConstrainedMask.lean`](lean/FlashProveNext/ConstrainedMask.lean)）。
+4. **单请求 KV 矩阵承诺与 `1.51 B/格` 流式跨槽证明器**：用事后 KV 矩阵承诺配合两阶段隐藏选择求和协议替代在线 GPU 逐词哈希（`210` 个注意力抽查合计仅需 `5.8 s`，[`specs/10`](specs/10-trajectory-commit.md)）；跨槽合批将电路向量数从约 152 万压至 `6,887`，配合按需 AES-256-CTR 盲化重生成，使 52.46 亿格证明装入 `21.0 GiB` 内存且零落盘。
 
 ---
 

@@ -1,0 +1,28 @@
+cff-version: 1.2.0
+message: "If you use this work, please cite it as below."
+title: "FlashProve-Next: Verifiable Inference for Production LLM APIs"
+version: "0.3.0"
+date-released: "2026-11-17"
+license: Apache-2.0
+repository-code: "https://github.com/s-JoL/FlashProve-Next"
+url: "https://s-jol.github.io/FlashProve-Next/"
+authors:
+  - family-names: Song
+    given-names: Liang
+    email: sl12160010@gmail.com
+abstract: >-
+  Publicly verifiable zero-knowledge proofs for closed-weight language-model APIs under unchanged
+  native floating-point production serving (bf16/fp8, random sampling, FlashAttention, CUDA Graphs,
+  continuous batching, prefix caching) while keeping weights, architecture, hidden system prompts,
+  hidden chain of thought, and multi-turn state private. Includes ten formal protocol specifications,
+  19 machine-checked Lean 4.29.1 modules (219 declarations, zero sorry), GPU certified-tolerance
+  calibration across 392,928 blocks, an out-of-core streaming F_{p^3} prover (1.51 B/cell) and
+  standalone CPU verifier demonstrated on unsliced Qwen3-0.6B with live vLLM 0.33, and offline
+  laptop verification bundles.
+keywords:
+  - verifiable inference
+  - zero-knowledge proofs
+  - LLM serving
+  - cryptography
+  - Lean 4
+  - formal verification
