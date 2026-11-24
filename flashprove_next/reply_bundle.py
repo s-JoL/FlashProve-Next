@@ -34,6 +34,8 @@ from .transcript import dumps, loads
 
 BUNDLE_MAGIC = "fpn-reply-zk-v1"
 HEADER_PREFIX = b"FPNZK1\n"
+HEADER_PREFIX_V2 = b"FPNZK2\n"
+FPNZK2_FIXED_SIZE_DEFAULT = 8 * 1024 * 1024
 DEFAULT_MAX_TOKENS = 32
 QWEN3_EOS_ID = 151645
 QWEN3_TOOL_END_ID = 151658
@@ -222,6 +224,37 @@ def _qwen3_06b_spec(name: str, *, m_c: int, m_g: int, t_pad: int = 256, security
     }
 
 
+def _qwen3_4b_spec(name: str, *, m_c: int, m_g: int, t_pad: int = 256, security_tier: str = "production") -> dict:
+    rule = S3.Rule(0.6, 0.95, 32)
+    eps_bits = int(np.array([1e-6], dtype=np.float32).view(np.uint32)[0])
+    return {
+        "name": name,
+        "security_tier": security_tier,
+        "d": 2560, "n_q": 32, "n_kv": 8, "dh": 128, "dff": 9728,
+        "L_MAX": 64,
+        "T_pad": int(t_pad),
+        "M_C": int(m_c),
+        "M_G": int(m_g),
+        "MQ_H": 268,
+        "s_bits": 1,
+        "SYS_CAP": 32,
+        "VEC_PAD": 262144,
+        "HIST_CAP": int(t_pad),
+        "TOOL_CAP": 32,
+        "QN_CAP": 12.0,
+        "KN_CAP": 1100.0,
+        "EXP_BITS": 17,
+        "V": 151936,
+        "eps_bits": eps_bits,
+        "rope_theta": 1000000.0,
+        "eos_token_id": QWEN3_EOS_ID,
+        "tool_end_token_id": QWEN3_TOOL_END_ID,
+        "default_max_tokens": DEFAULT_MAX_TOKENS,
+        "rule": rule.as_dict(),
+        "prm": asdict(MC.QWEN4B_PARAMS_R),
+    }
+
+
 # Verifier-side profile registry.  A proof bundle names its profile; the verifier uses ITS OWN copy of that profile and
 # rejects any bundle whose embedded spec differs, so an untrusted bundle cannot weaken M_C, M_G, MQ, MQ_H, the sampling
 # rule or the stop token ids.  "production" profiles carry the full spot-check budget; "demo_fast" / "dev_fast" profiles
@@ -229,8 +262,11 @@ def _qwen3_06b_spec(name: str, *, m_c: int, m_g: int, t_pad: int = 256, security
 REGISTERED_PROFILES: dict[str, dict] = {
     "qwen3-0.6b-sec315": _qwen3_06b_spec("qwen3-0.6b-sec315", m_c=210, m_g=105, t_pad=256, security_tier="production"),
     "qwen3-0.6b-sec315-t1024": _qwen3_06b_spec("qwen3-0.6b-sec315-t1024", m_c=210, m_g=105, t_pad=1024, security_tier="production"),
+    "qwen3-0.6b-extseed153": _qwen3_06b_spec("qwen3-0.6b-extseed153", m_c=102, m_g=51, t_pad=256, security_tier="production"),
     "qwen3-0.6b-mc4-mg2": _qwen3_06b_spec("qwen3-0.6b-mc4-mg2", m_c=4, m_g=2, t_pad=256, security_tier="dev_fast"),
     "qwen3-0.6b-demo": _qwen3_06b_spec("qwen3-0.6b-demo", m_c=4, m_g=2, t_pad=256, security_tier="demo_fast"),
+    "qwen3-4b-extseed153": _qwen3_4b_spec("qwen3-4b-extseed153", m_c=102, m_g=51, t_pad=256, security_tier="production"),
+    "qwen3-4b-demo": _qwen3_4b_spec("qwen3-4b-demo", m_c=4, m_g=2, t_pad=256, security_tier="demo_fast"),
 }
 BUILTIN_PROFILES = frozenset(REGISTERED_PROFILES)
 
@@ -286,11 +322,13 @@ def profile_spec_from_hf_config(
     V = int(cfg["vocab_size"])
     eps_bits = int(np.array([cfg["rms_norm_eps"]], dtype=np.float32).view(np.uint32)[0])
     rope_theta = float(cfg.get("rope_theta") or (cfg.get("rope_parameters") or {}).get("rope_theta", 1000000.0))
+    n_layers = int(cfg.get("num_hidden_layers", 32))
+    l_max = 64 if n_layers > 32 else 32
     return {
         "name": str(name),
         "security_tier": "custom",
         "d": d, "n_q": n_q, "n_kv": n_kv, "dh": dh, "dff": dff,
-        "L_MAX": 32,
+        "L_MAX": l_max,
         "T_pad": int(t_pad),
         "M_C": int(m_c),
         "M_G": int(m_g),
@@ -352,9 +390,27 @@ def build_profile(spec: dict, token_bytes: list[bytes | None] | None = None) -> 
     )
 
 
-def pack_bundle(profile_spec: dict, stmt: dict, pf: dict, pad_to_bytes: int = 0) -> bytes:
-    """Serialize `(profile_spec, stmt, pf)` into a `FPNZK1\\n` + gzip payload (optionally padded to fixed container size)."""
-    body = dumps({"magic": BUNDLE_MAGIC, "profile_spec": profile_spec, "stmt": stmt, "pf": pf})
+def pack_bundle(profile_spec: dict, stmt: dict, pf: dict, pad_to_bytes: int = 0, *, format: str = "v1") -> bytes:
+    """Serialize `(profile_spec, stmt, pf)` into a reply_zk bundle.
+
+    - `format="v1"` (default for legacy callers): `FPNZK1\\n` + gzip payload (optionally padded).
+    - `format="v2"` (v1.0 fixed-size ZK container): `FPNZK2\\n` + le64(container_bytes) + le64(body_len)
+      + uncompressed canonical JSON payload + strict zero-byte tail padding to `container_bytes` (default 8 MiB).
+      Zero compression eliminates length-oracle side channels, and unpack checks all tail bytes are 0x00.
+    """
+    payload_obj = {"magic": BUNDLE_MAGIC, "profile_spec": profile_spec, "stmt": stmt, "pf": pf}
+    if format == "v2":
+        from .transcript import _enc
+        body = json.dumps(_enc(payload_obj), separators=(",", ":")).encode("utf-8")
+        hdr_len = len(HEADER_PREFIX_V2) + 16
+        total = int(pad_to_bytes) if pad_to_bytes > 0 else FPNZK2_FIXED_SIZE_DEFAULT
+        if hdr_len + len(body) > total:
+            raise ValueError(f"FPNZK2 bundle body {hdr_len + len(body)} B exceeds fixed container size {total} B")
+        hdr = HEADER_PREFIX_V2 + total.to_bytes(8, "little") + len(body).to_bytes(8, "little")
+        return hdr + body + bytes(total - hdr_len - len(body))
+    if format != "v1":
+        raise ValueError(f"unknown bundle format {format!r} (expected 'v1' or 'v2')")
+    body = dumps(payload_obj)
     hdr = HEADER_PREFIX + len(body).to_bytes(8, "little")
     raw = hdr + body
     if pad_to_bytes > 0:
@@ -365,13 +421,46 @@ def pack_bundle(profile_spec: dict, stmt: dict, pf: dict, pad_to_bytes: int = 0)
 
 
 def is_reply_zk_blob(blob: bytes) -> bool:
-    return isinstance(blob, (bytes, bytearray)) and bytes(blob[:len(HEADER_PREFIX)]) == HEADER_PREFIX
+    return isinstance(blob, (bytes, bytearray)) and (
+        bytes(blob[:len(HEADER_PREFIX)]) == HEADER_PREFIX
+        or bytes(blob[:len(HEADER_PREFIX_V2)]) == HEADER_PREFIX_V2
+    )
 
 
-def unpack_bundle(blob: bytes) -> dict:
+MAX_FPNZK2_BYTES = 16 * 1024 * 1024
+MAX_FPNZK1_BYTES = 256 * 1024 * 1024
+
+
+def unpack_bundle(blob: bytes, *, expected_container_bytes: int | None = None) -> dict:
     b = bytes(blob)
-    if not is_reply_zk_blob(b) or len(b) < len(HEADER_PREFIX) + 8:
-        raise ValueError("not a FPNZK1 reply_zk bundle")
+    if b.startswith(HEADER_PREFIX_V2):
+        hdr_len = len(HEADER_PREFIX_V2) + 16
+        if len(b) < hdr_len:
+            raise ValueError("E_LENGTH: truncated FPNZK2 header")
+        if len(b) > MAX_FPNZK2_BYTES:
+            raise ValueError(f"E_LENGTH: FPNZK2 container size {len(b)} exceeds hard limit {MAX_FPNZK2_BYTES}")
+        total = int.from_bytes(b[len(HEADER_PREFIX_V2):len(HEADER_PREFIX_V2) + 8], "little")
+        ln = int.from_bytes(b[len(HEADER_PREFIX_V2) + 8:hdr_len], "little")
+        if len(b) != total:
+            raise ValueError(f"E_LENGTH: FPNZK2 container size {len(b)} != declared {total}")
+        if expected_container_bytes is not None and len(b) != int(expected_container_bytes):
+            raise ValueError(
+                f"E_LENGTH: FPNZK2 container size {len(b)} != expected profile size {int(expected_container_bytes)}"
+            )
+        if ln <= 0 or hdr_len + ln > total:
+            raise ValueError("E_LENGTH: corrupted FPNZK2 body length")
+        tail = b[hdr_len + ln:]
+        if any(tail):
+            raise ValueError("E_PADDING: non-zero byte in FPNZK2 tail padding")
+        from .transcript import _dec
+        d = _dec(json.loads(b[hdr_len:hdr_len + ln]))
+        if not isinstance(d, dict) or d.get("magic") != BUNDLE_MAGIC:
+            raise ValueError("invalid FPNZK2 magic")
+        return d
+    if not b.startswith(HEADER_PREFIX) or len(b) < len(HEADER_PREFIX) + 8:
+        raise ValueError("not a FPNZK1/FPNZK2 reply_zk bundle")
+    if len(b) > MAX_FPNZK1_BYTES:
+        raise ValueError(f"E_LENGTH: FPNZK1 container size {len(b)} exceeds hard limit {MAX_FPNZK1_BYTES}")
     ln = int.from_bytes(b[len(HEADER_PREFIX):len(HEADER_PREFIX) + 8], "little")
     off = len(HEADER_PREFIX) + 8
     if ln <= 0 or off + ln > len(b):
@@ -409,16 +498,45 @@ def verify_cli(
     allowed_profiles: list[str] | None = None,
     tokenizer_dir: str | None = None,
     allow_reduced_security: bool = False,
+    expected_c_pre: bytes | None = None,
+    expected_c_ext: bytes | None = None,
 ) -> tuple[bool, str, dict]:
-    """Standalone CPU verification of a `FPNZK1` proof bundle against public `(model_id, req, rep, nonce)`.
+    """Standalone CPU verification of a `FPNZK1`/`FPNZK2` proof bundle against public `(model_id, req, rep, nonce)`.
     By default only `security_tier == 'production'` profiles are accepted; non-production demo/dev/test profiles
     require `allow_reduced_security=True` so an untrusted server cannot downgrade the spot-check budget."""
+    try:
+        return _verify_cli_inner(
+            model_id_bytes, req, rep, nonce_hex, blob,
+            allowed_profiles=allowed_profiles,
+            tokenizer_dir=tokenizer_dir,
+            allow_reduced_security=allow_reduced_security,
+            expected_c_pre=expected_c_pre,
+            expected_c_ext=expected_c_ext,
+        )
+    except Exception as e:
+        return False, f"malformed bundle ({type(e).__name__}: {e})", {}
+
+
+def _verify_cli_inner(
+    model_id_bytes: bytes,
+    req: dict,
+    rep: dict,
+    nonce_hex: str,
+    blob: bytes,
+    allowed_profiles: list[str] | None = None,
+    tokenizer_dir: str | None = None,
+    allow_reduced_security: bool = False,
+    expected_c_pre: bytes | None = None,
+    expected_c_ext: bytes | None = None,
+) -> tuple[bool, str, dict]:
     t0 = time.perf_counter()
     try:
         bundle = unpack_bundle(blob)
         untrusted_spec = bundle["profile_spec"]
         stmt = bundle["stmt"]
         pf = bundle["pf"]
+        if not isinstance(untrusted_spec, dict) or not isinstance(stmt, dict):
+            raise TypeError("profile_spec and stmt must be JSON objects")
     except Exception as e:
         return False, f"malformed bundle ({type(e).__name__}: {e})", {}
 
@@ -436,6 +554,14 @@ def verify_cli(
             f"non-production profile {prof_name!r} (tier={spec.get('security_tier')!r}) requires --allow-reduced-security",
             {"profile": prof_name, "security_tier": spec.get("security_tier")},
         )
+    if bytes(blob).startswith(HEADER_PREFIX_V2):
+        exp_sz = int(spec.get("fpnzk2_container_bytes", FPNZK2_FIXED_SIZE_DEFAULT))
+        if len(blob) != exp_sz:
+            return (
+                False,
+                f"E_LENGTH: FPNZK2 envelope size {len(blob)} != trusted profile size {exp_sz}",
+                {"profile": prof_name},
+            )
 
     try:
         exp_mid = hex_to_mid(model_id_bytes.hex())
@@ -543,7 +669,7 @@ def verify_cli(
 
     try:
         prf = build_profile(spec, token_bytes=tok_bytes)
-        RZ.verify(prf, stmt, pf)
+        RZ.verify(prf, stmt, pf, expected_c_pre=expected_c_pre, expected_c_ext=expected_c_ext)
     except Z.ProofError as e:
         return False, str(e), {"profile": prof_name, "verify_s": round(time.perf_counter() - t0, 3)}
     except Exception as e:

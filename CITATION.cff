@@ -1,8 +1,8 @@
 cff-version: 1.2.0
 message: "If you use this work, please cite it as below."
 title: "FlashProve-Next: Verifiable Inference for Production LLM APIs"
-version: "0.3.0"
-date-released: "2026-11-17"
+version: "1.0.0"
+date-released: "2026-11-25"
 license: Apache-2.0
 repository-code: "https://github.com/s-JoL/FlashProve-Next"
 url: "https://s-jol.github.io/FlashProve-Next/"
@@ -11,14 +11,14 @@ authors:
     given-names: Liang
     email: sl12160010@gmail.com
 abstract: >-
-  Publicly verifiable zero-knowledge proofs for closed-weight language-model APIs under unchanged
-  native floating-point production serving (bf16/fp8, random sampling, FlashAttention, CUDA Graphs,
-  continuous batching, prefix caching) while keeping weights, architecture, hidden system prompts,
-  hidden chain of thought, and multi-turn state private. Includes ten formal protocol specifications,
-  19 machine-checked Lean 4.29.1 modules (219 declarations, zero sorry), GPU certified-tolerance
-  calibration across 392,928 blocks, an out-of-core streaming F_{p^3} prover (1.51 B/cell) and
-  standalone CPU verifier demonstrated on unsliced Qwen3-0.6B with live vLLM 0.33, and offline
-  laptop verification bundles.
+  Verifiable inference proofs for closed-weight LLM APIs served in native floating point
+  (bf16/fp8/mxfp4, random sampling, FlashAttention, CUDA Graphs, continuous batching, prefix
+  caching) while hiding model weights, hidden system prompts, hidden chain of thought, intermediate
+  activations, and multi-turn state. Version 1.0.0 includes eleven specifications (specs/01-11),
+  28 Lean 4.29.1 modules (696 axiom-audited declarations, zero sorry, standard axioms only), a
+  zero-dependency Rust FPN2 verifier (fpn-core / fpn-verify) and detached Python reference, a
+  zero-Phase-2 folded ZK-Basefold + FracLogUp-GKR backend evaluated on unsliced Qwen3-0.6B,
+  Qwen3-4B, and live vLLM 0.33 Qwen3-30B-A3B-FP8, and offline laptop CPU verification demos.
 keywords:
   - verifiable inference
   - zero-knowledge proofs

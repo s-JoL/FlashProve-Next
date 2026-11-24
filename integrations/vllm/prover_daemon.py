@@ -310,7 +310,11 @@ def main():
             wit["st"] = job["st_wit"]
             stmt = RZ.statement(prf, com, R_root, job["api"], job["st_stmt"])
             pf, info = RZ.prove(prf, stmt, wit, B=B)
-            blob = RB.pack_bundle(prof_spec, stmt, pf, pad_to_bytes=args.pad_proof_bytes)
+            blob = RB.pack_bundle(
+                prof_spec, stmt, pf,
+                pad_to_bytes=args.pad_proof_bytes,
+                format="v2" if args.pad_proof_bytes > 0 else "v1",
+            )
         except Exception as e:
             rec.update(prove_s=round(time.perf_counter() - t1, 3), outcome="prover_refused",
                        error=f"{type(e).__name__}: {e}"[:400])

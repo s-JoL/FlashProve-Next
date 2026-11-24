@@ -6,6 +6,19 @@
 #include <cstring>
 #include <vector>
 
+// Large loops run on an OpenMP team when compiled with -fopenmp (Linux build); every parallel loop is element-wise
+// or an exact modular sum over fixed chunks, so the result never depends on the thread count.
+// The team size is set from Python (`fpn_set_threads`, cgroup-quota aware); default 1 = serial.
+static int g_threads = 1;
+static const long FPN_CH = 4096;     // fixed reduction chunk (u128 partial sums of <= 4096 reduced products)
+#ifdef _OPENMP
+#include <omp.h>
+#define FPN_PRAGMA(x) _Pragma(#x)
+#define FPN_PAR(n) FPN_PRAGMA(omp parallel for schedule(static) num_threads(g_threads) if ((n) >= 32768 && g_threads > 1))
+#else
+#define FPN_PAR(n)
+#endif
+
 typedef uint64_t u64;
 typedef unsigned __int128 u128;
 static const u64 PP = 0xFFFFFFFF00000001ULL;
@@ -40,12 +53,29 @@ static inline E3 emul(E3 x, E3 y) {
 
 extern "C" {
 
-int tg_version() { return 6; }
+int tg_version() { return 7; }
+int fpn_set_threads(int k) {
+#ifdef _OPENMP
+  g_threads = k < 1 ? 1 : k;
+  return g_threads;
+#else
+  (void)k; g_threads = 1; return 1;
+#endif
+}
 
 // ------------------------------------------------------------------ base-field vectors
-void gl_mul(const u64* a, const u64* b, u64* c, long n) { for (long i = 0; i < n; i++) c[i] = mulm(a[i], b[i]); }
-void gl_add(const u64* a, const u64* b, u64* c, long n) { for (long i = 0; i < n; i++) c[i] = addm(a[i], b[i]); }
-void gl_sub(const u64* a, const u64* b, u64* c, long n) { for (long i = 0; i < n; i++) c[i] = subm(a[i], b[i]); }
+void gl_mul(const u64* a, const u64* b, u64* c, long n) {
+  FPN_PAR(n)
+  for (long i = 0; i < n; i++) c[i] = mulm(a[i], b[i]);
+}
+void gl_add(const u64* a, const u64* b, u64* c, long n) {
+  FPN_PAR(n)
+  for (long i = 0; i < n; i++) c[i] = addm(a[i], b[i]);
+}
+void gl_sub(const u64* a, const u64* b, u64* c, long n) {
+  FPN_PAR(n)
+  for (long i = 0; i < n; i++) c[i] = subm(a[i], b[i]);
+}
 u64 gl_sum(const u64* a, long n) { u128 s = 0; for (long i = 0; i < n; i++) { s += a[i]; if ((i & 0xFFFF) == 0xFFFF) s = red128(s); } return red128(s); }
 
 void gl_pow_table(u64 w, u64* out, long n) { u64 v = 1; for (long i = 0; i < n; i++) { out[i] = v; v = mulm(v, w); } }
@@ -60,19 +90,29 @@ void gl_batch_inv(const u64* a, u64* out, long n) {
 }
 // extension vectors (3, n): a0 = a, a1 = a + n, a2 = a + 2n
 void ext_mul(const u64* a, const u64* b, u64* c, long n) {
+  FPN_PAR(n)
   for (long i = 0; i < n; i++) {
     E3 r = emul({a[i], a[n + i], a[2 * n + i]}, {b[i], b[n + i], b[2 * n + i]});
     c[i] = r.a; c[n + i] = r.b; c[2 * n + i] = r.c;
   }
 }
 void ext_dot(const u64* a, const u64* b, long n, u64* out) {
-  u128 s0 = 0, s1 = 0, s2 = 0;
-  for (long i = 0; i < n; i++) {
-    E3 r = emul({a[i], a[n + i], a[2 * n + i]}, {b[i], b[n + i], b[2 * n + i]});
-    s0 += r.a; s1 += r.b; s2 += r.c;
-    if ((i & 0xFFFF) == 0xFFFF) { s0 = red128(s0); s1 = red128(s1); s2 = red128(s2); }
+  // exact sum mod p in fixed FPN_CH-entry chunks (thread split cannot change the value)
+  long nch = (n + FPN_CH - 1) / FPN_CH;
+  std::vector<u64> part(3 * (nch ? nch : 1), 0);
+  FPN_PAR(n)
+  for (long ch = 0; ch < nch; ch++) {
+    u128 s0 = 0, s1 = 0, s2 = 0;
+    long hi = (ch + 1) * FPN_CH; if (hi > n) hi = n;
+    for (long i = ch * FPN_CH; i < hi; i++) {
+      E3 r = emul({a[i], a[n + i], a[2 * n + i]}, {b[i], b[n + i], b[2 * n + i]});
+      s0 += r.a; s1 += r.b; s2 += r.c;
+    }
+    part[3 * ch] = red128(s0); part[3 * ch + 1] = red128(s1); part[3 * ch + 2] = red128(s2);
   }
-  out[0] = red128(s0); out[1] = red128(s1); out[2] = red128(s2);
+  u64 o0 = 0, o1 = 0, o2 = 0;
+  for (long ch = 0; ch < nch; ch++) { o0 = addm(o0, part[3 * ch]); o1 = addm(o1, part[3 * ch + 1]); o2 = addm(o2, part[3 * ch + 2]); }
+  out[0] = o0; out[1] = o1; out[2] = o2;
 }
 // <base vals, ext w>
 void base_ext_dot(const u64* v, const u64* w, long n, u64* out) {
@@ -90,6 +130,7 @@ void eq_table(const u64* r, int k, u64* out) {
   long h = 1;
   for (int j = 0; j < k; j++) {
     E3 rr = {r[3 * j], r[3 * j + 1], r[3 * j + 2]}; E3 ss = esub({1, 0, 0}, rr);
+    FPN_PAR(h)
     for (long i = 0; i < h; i++) {
       E3 v = {out[i], out[n + i], out[2 * n + i]};
       E3 a = emul(v, rr), b = emul(v, ss);
@@ -197,6 +238,74 @@ void p2_permute(u64* state, long n, u64* trace) {
       }
     }
     for (int l = 0; l < 12; l++) state[l * n + i] = s[l];
+  }
+}
+
+// ------------------------------------------------------------------ sumcheck helpers (tg_version 7)
+// Extension columns are (3, M) row-major: limb l of entry i at col[l * M + i].
+static inline E3 ld(const u64* c, long M, long i) { return {c[i], c[M + i], c[2 * M + i]}; }
+static inline void st(u64* c, long M, long i, E3 v) { c[i] = v.a; c[M + i] = v.b; c[2 * M + i] = v.c; }
+// (3, M) times one extension scalar c.
+void ext_scale(const u64* col, long M, const u64* c, u64* out) {
+  E3 cc = {c[0], c[1], c[2]};
+  FPN_PAR(M)
+  for (long i = 0; i < M; i++) st(out, M, i, emul(ld(col, M, i), cc));
+}
+// Multilinear halving: out[i] = col[2i] + r (col[2i+1] - col[2i]); col (3, M), out (3, M/2).
+void ext_fold(const u64* col, long M, const u64* r, u64* out) {
+  long h = M / 2; E3 rr = {r[0], r[1], r[2]};
+  FPN_PAR(h)
+  for (long i = 0; i < h; i++) {
+    E3 lo = ld(col, M, 2 * i), hi = ld(col, M, 2 * i + 1);
+    st(out, h, i, eadd(lo, emul(rr, esub(hi, lo))));
+  }
+}
+// One FracLogUp-GKR layer-sumcheck round: columns w, nl, dl, nr, dr (each (3, M), M = 2m); for t = 0..3 with
+// x_t = x_lo + t (x_hi - x_lo):  out[t] = sum_i w_t (nl_t dr_t + nr_t dl_t + alpha dl_t dr_t)  (out (4, 3)).
+void gkr_round(const u64* w, const u64* nl, const u64* dl, const u64* nr, const u64* dr, long M,
+               const u64* alpha, u64* out) {
+  // The 15 limb rows sit at power-of-two strides (L1 set aliasing if read together), so each chunk is first copied
+  // row by row into a contiguous per-pair buffer (15 limbs x {lo, hi}), then evaluated.
+  long m = M / 2; E3 al = {alpha[0], alpha[1], alpha[2]};
+  const u64* cols[5] = {w, nl, dl, nr, dr};
+  long nch = (m + FPN_CH - 1) / FPN_CH;
+  std::vector<u64> part(12 * (nch ? nch : 1), 0);
+  FPN_PAR(m)
+  for (long ch = 0; ch < nch; ch++) {
+    const long SUB = 256;
+    u64 buf[SUB * 30];
+    u128 s[4][3] = {{0}};
+    long i_hi = (ch + 1) * FPN_CH; if (i_hi > m) i_hi = m;
+    for (long i0 = ch * FPN_CH; i0 < i_hi; i0 += SUB) {
+      long cnt = i_hi - i0 < SUB ? i_hi - i0 : SUB;
+      for (int k = 0; k < 5; k++)
+        for (int l = 0; l < 3; l++) {
+          const u64* src = cols[k] + (long)l * M + 2 * i0;
+          int slot = 2 * (3 * k + l);
+          for (long q = 0; q < cnt; q++) { buf[30 * q + slot] = src[2 * q]; buf[30 * q + slot + 1] = src[2 * q + 1]; }
+        }
+      for (long q = 0; q < cnt; q++) {
+        const u64* b = buf + 30 * q;
+        E3 x[5], step[5];
+        for (int k = 0; k < 5; k++) {
+          E3 lo = {b[6 * k], b[6 * k + 2], b[6 * k + 4]}, hi = {b[6 * k + 1], b[6 * k + 3], b[6 * k + 5]};
+          x[k] = lo; step[k] = esub(hi, lo);
+        }
+        for (int t = 0; t < 4; t++) {
+          if (t) for (int k = 0; k < 5; k++) x[k] = eadd(x[k], step[k]);
+          E3 num = eadd(emul(x[1], x[4]), emul(x[3], x[2]));
+          E3 den = emul(x[2], x[4]);
+          E3 v = emul(x[0], eadd(num, emul(den, al)));
+          s[t][0] += v.a; s[t][1] += v.b; s[t][2] += v.c;
+        }
+      }
+    }
+    for (int t = 0; t < 4; t++) for (int l = 0; l < 3; l++) part[12 * ch + 3 * t + l] = red128(s[t][l]);
+  }
+  for (int q = 0; q < 12; q++) {
+    u64 acc = 0;
+    for (long ch = 0; ch < nch; ch++) acc = addm(acc, part[12 * ch + q]);
+    out[q] = acc;
   }
 }
 }

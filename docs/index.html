@@ -4,9 +4,9 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>FlashProve-Next — Verifiable Inference for Production LLM APIs</title>
-  <meta name="description" content="Publicly verifiable zero-knowledge proofs for closed-weight LLM APIs—unchanged native-FP serving (vLLM + CUDA Graphs), private weights/architecture/CoT, Lean 4 soundness proofs, and seconds-scale CPU verification." />
+  <meta name="description" content="Publicly verifiable zero-knowledge proofs for native-FP LLM APIs (vLLM, CUDA Graphs): folded ZK-Basefold + FracLogUp-GKR prover, zero-dependency Rust verifier, and 28 Lean 4 modules." />
   <meta property="og:title" content="FlashProve-Next — Verifiable Inference for Production LLM APIs" />
-  <meta property="og:description" content="Publicly verifiable zero-knowledge proofs for closed-weight LLM APIs—unchanged native-FP serving, private weights/architecture/CoT, 19 Lean 4 modules, and seconds-scale CPU verification." />
+  <meta property="og:description" content="Verify native-FP LLM API responses on an ordinary CPU without integer surrogates: fixed 8 MiB folded proofs, ~10 ms Rust FPN2 verifier, 28 Lean 4 modules (696 declarations), and RTX 6000D receipts." />
   <meta property="og:type" content="website" />
   <meta property="og:url" content="https://s-jol.github.io/FlashProve-Next/" />
   <style>
@@ -329,8 +329,8 @@
     <div class="container nav">
       <div class="brand">
         <span>FlashProve-Next</span>
-        <span class="brand-tag en">Stage 1 · v0.3.0</span>
-        <span class="brand-tag zh">Stage 1 · v0.3.0</span>
+        <span class="brand-tag en">v1.0.0</span>
+        <span class="brand-tag zh">v1.0.0</span>
       </div>
       <nav class="nav-links">
         <a href="#demo"><span class="en">CPU Demo</span><span class="zh">CPU 验证演示</span></a>
@@ -338,7 +338,7 @@
         <a href="#architecture"><span class="en">How It Works</span><span class="zh">三步工作流</span></a>
         <a href="#formal"><span class="en">Lean 4</span><span class="zh">形式化验证</span></a>
         <a href="#benchmarks"><span class="en">Measurements</span><span class="zh">实测数据</span></a>
-        <a href="specs.html"><span class="en">Specs (01–10)</span><span class="zh">规范全文 (01–10)</span></a>
+        <a href="specs.html"><span class="en">Specs (01–11)</span><span class="zh">规范全文 (01–11)</span></a>
       </nav>
       <div class="lang-toggle" role="group" aria-label="Language switch">
         <button id="btn-en" class="active" onclick="setLang('en')">EN</button>
@@ -359,13 +359,13 @@
           <span class="zh">FlashProve-Next：面向生产级大模型 API 的可验证推理</span>
         </h1>
         <p class="subtitle">
-          <span class="en">By Liang Song · Prove which model answered an API request—without revealing weights, architecture, or hidden context, and without changing how production inference runs. Anyone can verify the proof on an ordinary CPU in seconds.</span>
-          <span class="zh">作者：宋亮（Liang Song） · 给每一条大模型 API 回复附上一份普通笔记本 CPU 秒级可验的零知识证明，证实回复确实出自官方公布的那套真实模型配置——既不需要把线上引擎改成定点整数替身，也不泄露模型权重、结构、隐藏系统提示词与隐藏思维链。</span>
+          <span class="en">By Liang Song · Verify that an API response came from the real model configuration in <code>model_id</code> without replacing native floating-point serving with an integer surrogate and without revealing weights or hidden prompts.</span>
+          <span class="zh">作者：宋亮（Liang Song） · 在不把线上原生浮点引擎改成整数替身、也不泄露权重与隐藏提示词的前提下，让任何客户端都能在普通 CPU 上验证大模型 API 回复出自官方承诺的真实配置。</span>
         </p>
 
         <div class="notice-banner">
-          <span class="en"><strong>Current Release (<code>v0.3.0</code>, Stage 1):</strong> Publishes the streaming cross-slot 𝔽<sub>p</sub><sup>3</sup> prover (<code>1.51 B/cell</code>, zero disk spill), full unsliced <code>Qwen3-0.6B</code> setup &amp; 315-draw reply proofs (<code>12.02 s</code> CPU verify), standalone CPU verifier CLI (<code>fpn-verify</code>), offline laptop demo bundles, non-invasive <code>vLLM 0.33</code> CUDA-graph integration, 19 machine-checked Lean 4.29.1 modules (219 declarations), and the updated technical report.</span>
-          <span class="zh"><strong>当前版本（<code>v0.3.0</code>，Stage 1）：</strong>发布 𝔽<sub>p</sub><sup>3</sup> 流式跨槽证明器（<code>1.51 B/格</code>、零落盘）、完整未裁切 <code>Qwen3-0.6B</code> 设置证明与 315 次抽查回复证明（纯 CPU 验证 <code>12.02 s</code>）、独立验证器 <code>fpn-verify</code>、离线笔记本体验包、无侵入 <code>vLLM 0.33</code> 闭环原型、19 个 Lean 4.29.1 机检模块（219 条声明）及同步更新的英文技术论文。</span>
+          <span class="en"><strong>Release <code>v1.0.0</code>:</strong> Zero-Phase-2 folded ZK-Basefold + FracLogUp-GKR backend inside fixed <code>8 MiB</code> <code>FPNZK2</code> / <code>FPN2</code> containers (incl. unique-decoding <code>Q=128</code>), zero-dependency Rust verifier (<code>core/</code>, <code>~10 ms</code> on Apple M1) + detached Python reference, RTX 6000D receipts on unsliced <code>Qwen3-0.6B</code>, 36-layer <code>Qwen3-4B</code>, and live <code>vLLM 0.33</code> <code>Qwen3-30B-A3B-FP8</code>, plus <strong>28 Lean 4.29.1 modules (696 axiom-audited declarations, zero <code>sorry</code>)</strong>.</span>
+          <span class="zh"><strong>版本 <code>v1.0.0</code>：</strong>统一零 Phase-2 折叠 ZK-Basefold + FracLogUp-GKR 引擎与定长 <code>8 MiB</code> <code>FPNZK2</code> / <code>FPN2</code> 容器（含唯一译码 <code>Q=128</code> 实测）、零依赖 Rust 验证器（<code>core/</code>，M1 约 <code>10 ms</code>）与脱钩 Python 参考、RTX 6000D 上完整 <code>Qwen3-0.6B</code> / 36 层 <code>Qwen3-4B</code> / 真在线 <code>vLLM 0.33</code> <code>Qwen3-30B-A3B-FP8</code> 公开回执，以及 <strong>28 个 Lean 4.29.1 模块（696 条审计声明，零 <code>sorry</code>）</strong>。</span>
         </div>
 
         <div class="cta-row">
@@ -378,8 +378,8 @@
             <span class="zh">笔记本纯 CPU 验证演示</span>
           </a>
           <a class="btn" href="specs.html">
-            <span class="en">Specifications (01–10)</span>
-            <span class="zh">协议规范（01–10）</span>
+            <span class="en">Specifications (01–11)</span>
+            <span class="zh">协议规范（01–11）</span>
           </a>
           <a class="btn" href="https://github.com/s-JoL/FlashProve-Next/blob/main/REVIEW.md" target="_blank" rel="noopener">
             <span class="en">Reviewer Guide</span>
@@ -389,31 +389,31 @@
 
         <div class="metrics-strip">
           <div class="metric-card">
-            <div class="metric-val">12.02 s CPU</div>
+            <div class="metric-val">10.1 ms Rust / 10.7 s Py</div>
             <div class="metric-label">
-              <span class="en">Standalone CPU verify on full 315-draw <code>Qwen3-0.6B</code> proof (5.25B cells, <code>1.51 B/cell</code> RAM)</span>
-              <span class="zh">完整 <code>Qwen3-0.6B</code> 全安全 315 抽查证明（52.5 亿格，<code>1.51 B/格</code> 内存）纯 CPU 验证耗时</span>
+              <span class="en">Zero-dependency Rust verifies self-contained <code>8 MiB</code> <code>FPN2</code> (64-row demo, <code>10.1 ms</code>); Python verifies full 12-round <code>Qwen3-0.6B ExtSeed-153</code> <code>FPNZK2</code> (<code>10.73 s</code>)</span>
+              <span class="zh">零依赖 Rust 验证自包含 <code>8 MiB</code> <code>FPN2</code>（64 行示例 <code>10.1 ms</code>）；Python 验证完整 12 轮 <code>Qwen3-0.6B ExtSeed-153</code> <code>FPNZK2</code>（<code>10.73 s</code>）</span>
             </div>
           </div>
           <div class="metric-card">
-            <div class="metric-val">19 / 219</div>
+            <div class="metric-val">28 / 696</div>
             <div class="metric-label">
-              <span class="en">Lean 4.29.1 modules / declarations (zero <code>sorry</code>, standard axioms only)</span>
-              <span class="zh">Lean 4.29.1 模块 / 定理声明（零 <code>sorry</code>，仅标准三条公理）</span>
+              <span class="en">Lean 4.29.1 modules / declarations (zero <code>sorry</code>, zero <code>native_decide</code>, standard axioms only)</span>
+              <span class="zh">Lean 4.29.1 模块 / 定理声明（零 <code>sorry</code>、禁 <code>native_decide</code>，仅标准三条公理）</span>
             </div>
           </div>
           <div class="metric-card">
-            <div class="metric-val">0 / 392,928</div>
+            <div class="metric-val">0 / 3.81M</div>
             <div class="metric-label">
-              <span class="en">False rejections on honest native-FP blocks (<code>R32</code> costs 1.2%–2.7% vLLM tok/s)</span>
-              <span class="zh">诚实原生浮点算子块误拒数（<code>R32</code> 数值配置仅耗 vLLM 1.2%–2.7% 吞吐）</span>
+              <span class="en">Honest false rejections across 5 dense &amp; MoE models (1.85M GEMM/MoE blocks + 1.96M non-GEMM rows)</span>
+              <span class="zh">5 真实稠密与 MoE 模型全算子诚实零误拒（185 万 GEMM/MoE 块 + 196 万非 GEMM 行）</span>
             </div>
           </div>
           <div class="metric-card">
-            <div class="metric-val">33 / 33 Rejected</div>
+            <div class="metric-val">14/14 + 33/33</div>
             <div class="metric-label">
-              <span class="en">White-box forgery &amp; tamper checks (<code>test_reply_zk</code> + <code>test_api_zk</code>) plus live <code>int4</code> servers</span>
-              <span class="zh">33 项白盒伪造与篡改测试及在线 <code>int4</code> 量化降级服务端全部拦截拒绝</span>
+              <span class="en">Honest &amp; negative checks passed (real 28-layer perturbed/int4 weights + white-box forgery suites)</span>
+              <span class="zh">作弊矩阵与白盒防伪造全过（含真实 28 层改权重 / int4 降级与白盒伪造套件）</span>
             </div>
           </div>
         </div>
@@ -423,16 +423,26 @@
     <section id="demo">
       <div class="container">
         <h2>
-          <span class="en">Verify Real <code>Qwen3-0.6B</code> Proofs on a Laptop CPU</span>
-          <span class="zh">在笔记本纯 CPU 上核验真实 <code>Qwen3-0.6B</code> 证明</span>
+          <span class="en">Two Laptop CPU Demos (No GPU, No Model Weights)</span>
+          <span class="zh">两套笔记本纯 CPU 演示（无需显卡，无需权重）</span>
         </h2>
         <p class="section-lead">
-          <span class="en">No GPU, no PyTorch, and no model weights needed. Bundled proofs in <code>demo/bundles/</code> come from unsliced <code>Qwen3-0.6B</code> on live <code>vLLM 0.33</code> using the compact <code>qwen3-0.6b-demo</code> profile (<code>4 + 2</code> draws, <code>--allow-reduced-security</code>; full <code>2^-40</code> soundness uses <code>qwen3-0.6b-sec315</code> with <code>210 + 105</code> draws).</span>
-          <span class="zh">无需显卡、无需安装 PyTorch、无需下载模型权重。<code>demo/bundles/</code> 中的真实证明包产自在线 <code>vLLM 0.33</code> + 完整未裁切 <code>Qwen3-0.6B</code>，采用轻量的 <code>qwen3-0.6b-demo</code> 演示档（<code>4 + 2</code> 抽查，需显式加 <code>--allow-reduced-security</code>；完整 <code>2^-40</code> 可靠性使用 <code>210 + 105</code> 抽查的 <code>qwen3-0.6b-sec315</code> 档）。</span>
+          <span class="en">Start with the <code>~10 ms</code> zero-dependency Rust <code>FPN2</code> Relation-2 demo (exact <code>8 MiB</code> container, 64-row reference circuit), then verify bundled Stage-1 <code>Qwen3-0.6B</code> <code>vLLM 0.33</code> proofs (<code>qwen3-0.6b-demo</code>, <code>4 + 2</code> draws, <code>CUDA_VISIBLE_DEVICES=""</code>).</span>
+          <span class="zh">先用 <code>~10 ms</code> 零依赖 Rust <code>FPN2</code> 关系 2 演示（精确 <code>8 MiB</code> 容器，64 行参考电路）验证底层验证器，再核验随仓附带的 Stage 1 真实 <code>Qwen3-0.6B</code> <code>vLLM 0.33</code> 样本包（<code>qwen3-0.6b-demo</code>，<code>4 + 2</code> 抽查）。</span>
         </p>
 
+        <div class="terminal-card" style="margin-bottom:16px;">
+          <div><span class="t-dim"># Demo A: Zero-dependency Rust + detached Python FPN2 Relation-2 verifier (Apple M1 CPU)</span></div>
+          <div><span class="t-dim">$</span> pip install numpy &amp;&amp; cargo build --release --manifest-path core/Cargo.toml --bin fpn-verify</div>
+          <div><span class="t-dim">$</span> python demo/run_v1_relation2_demo.py</div>
+          <div class="t-dim">Container size: 8,388,608 B (exact 8 MiB, Q=72)</div>
+          <div>  [PASS] Honest proof (fpn2-llm-std-v1, Q=72) -&gt; <span class="t-ok">VERIFIED</span>   (Rust ~10 ms | Python ~110 ms)</div>
+          <div>  [PASS] 8 adversarial checks (pins / padding / length / gate &amp; range forgeries) -&gt; <span class="t-bad">REJECTED</span> (exact parity)</div>
+          <div>  [PASS] Re-proving randomization -&gt; 0 shared 64-byte private blocks</div>
+        </div>
+
         <div class="terminal-card">
-          <div><span class="t-dim"># Sample run on Intel i7-14700F (CUDA_VISIBLE_DEVICES="")</span></div>
+          <div><span class="t-dim"># Demo B: Bundled Stage-1 Qwen3-0.6B vLLM 0.33 API proof bundles (CUDA_VISIBLE_DEVICES="")</span></div>
           <div><span class="t-dim">$</span> pip install -e ".[tokenizers]" &amp;&amp; python -m flashprove_next.build_ext</div>
           <div><span class="t-dim">$</span> python demo/run_demo.py</div>
           <div class="t-dim">==============================================================================</div>
@@ -475,12 +485,12 @@
             <tr>
               <td><strong><span class="en">Soundness guarantee</span><span class="zh">可靠性保证</span></strong></td>
               <td><span class="en">Exact full-layer execution of the committed 4-bit integer model</span><span class="zh">已承诺 4-bit 整数替身模型的逐层精确执行</span></td>
-              <td><span class="en">Cost-weighted spot-check threshold relation (<code>σ = ρ = 0.5</code>, bad-accept <code>≤ 2^-40</code> over <code>Q ≤ 2^64</code>)</span><span class="zh">原生浮点轨迹的成本加权抽查阈值关系（默认 <code>σ = ρ = 0.5</code>，<code>Q ≤ 2^64</code> 下坏接受 <code>≤ 2^-40</code>）</span></td>
+              <td><span class="en">Cost-weighted spot-check threshold (<code>σ = ρ = 0.5</code>): <code>NI-315</code> (<code>≤ 2^-40</code>, <code>Q ≤ 2^64</code>) or <code>ExtSeed-153</code> (<code>≤ 2^-20</code>, <code>Q_samp ≤ 2^30</code> with pre-recorded <code>C_pre</code>)</span><span class="zh">原生浮点成本加权抽查阈值（<code>σ = ρ = 0.5</code>）：非交互 <code>NI-315</code>（<code>≤ 2^-40, Q ≤ 2^64</code>）或外部种子 <code>ExtSeed-153</code>（<code>≤ 2^-20, Q_samp ≤ 2^30</code>）</span></td>
             </tr>
             <tr>
               <td><strong><span class="en">What is committed</span><span class="zh">承诺对象</span></strong></td>
               <td><span class="en">A 4-bit deterministic integer surrogate model; native floating-point serving diverges from its exact-match policy</span><span class="zh">4-bit 确定性整数替身模型；线上原生浮点推理会偏离其精确匹配策略</span></td>
-              <td><span class="en">The actual deployed checkpoint (<code>bf16</code>/<code>fp8</code>), operator rounding bounds, hidden prompts &amp; key</span><span class="zh">线上实际加载的真实权重（<code>bf16</code>/<code>fp8</code>）、算子舍入规则、隐藏提示词与采样密钥</span></td>
+              <td><span class="en">The actual deployed checkpoint (<code>bf16</code>/<code>fp8</code>/<code>mxfp4</code>), operator rounding bounds, hidden prompts &amp; key</span><span class="zh">线上实际加载的真实权重（<code>bf16</code>/<code>fp8</code>/<code>mxfp4</code>）、算子舍入规则、隐藏提示词与采样密钥</span></td>
             </tr>
             <tr>
               <td><strong><span class="en">How serving runs</span><span class="zh">线上推理方式</span></strong></td>
@@ -490,7 +500,7 @@
             <tr>
               <td><strong><span class="en">What stays secret</span><span class="zh">商业机密保护范围</span></strong></td>
               <td><span class="en">Weights only; depth, width &amp; MoE layout are public; no hidden prompts, CoT, or multi-turn state</span><span class="zh">只藏权重；层数、宽度、MoE 结构公开；不支持隐藏提示词、隐藏思维链与多轮状态</span></td>
-              <td><span class="en">Weights, depth, width, MoE/MLA/linear-attention layout, precision, hidden prompts, hidden CoT &amp; multi-turn state</span><span class="zh">权重、层数、宽度、MoE 路由拓扑、精度格式、隐藏系统提示词、隐藏思维链与多轮加密状态全部隐藏</span></td>
+              <td><span class="en">Weights, hidden prompts, hidden CoT, activations &amp; multi-turn state (<code>v1.0.0</code> dense profiles fix coarse geometry; cross-architecture hiding in <code>v2</code>)</span><span class="zh">权重、隐藏提示词、隐藏思维链、中间激活与多轮状态（<code>v1.0.0</code> 稠密档位按 profile 固定粗粒度几何，跨架构全隐藏归入 <code>v2</code>）</span></td>
             </tr>
             <tr>
               <td><strong><span class="en">Commitment lifetime</span><span class="zh">承诺寿命</span></strong></td>
@@ -572,12 +582,12 @@
               <text x="350" y="238" font-size="11" fill="#475569">Background proving never blocks streaming</text>
 
               <text x="676" y="44" font-size="13" font-weight="700" fill="#0f172a">3. PROVE ASYNC &amp; VERIFY ON CPU</text>
-              <text x="688" y="80" font-size="12" font-weight="600" fill="#0f172a">Spot-Check 315 Sampled Steps/Blocks</text>
-              <text x="688" y="96" font-size="11" fill="#475569">1.51 B/cell streaming + cross-slot batching</text>
-              <text x="688" y="110" font-size="11" fill="#475569">Open touched weight &amp; KV columns in-circuit</text>
+              <text x="688" y="80" font-size="12" font-weight="600" fill="#0f172a">Folded ZK-Basefold + FracLogUp-GKR</text>
+              <text x="688" y="96" font-size="11" fill="#475569">Spot-check 153 / 315 blocks (0 Phase-2)</text>
+              <text x="688" y="110" font-size="11" fill="#475569">Fixed 8 MiB FPN2 / FPNZK2 container</text>
               <text x="688" y="160" font-size="12" font-weight="600" fill="#0f172a">Zero-Knowledge Proof over 𝔽<tspan baseline-shift="sub" font-size="9">p</tspan><tspan baseline-shift="super" font-size="9">3</tspan></text>
               <text x="688" y="176" font-size="11" fill="#475569">Reveals nothing beyond standard API output</text>
-              <text x="688" y="230" font-size="12" font-weight="700" fill="#ffffff">Verify on Desktop CPU (12.0 s, i7-14700F)</text>
+              <text x="688" y="230" font-size="12" font-weight="700" fill="#ffffff">Verify on CPU (~10 ms Rust | ~10.8 s Py)</text>
             </g>
 
             <g class="zh">
@@ -598,28 +608,28 @@
               <text x="350" y="238" font-size="11" fill="#475569">后台出证绝不阻塞流式输出</text>
 
               <text x="676" y="44" font-size="13" font-weight="700" fill="#0f172a">3. 后台出证与纯 CPU 验证</text>
-              <text x="688" y="80" font-size="12" font-weight="600" fill="#0f172a">随机抽查 315 个计算块与采样步</text>
-              <text x="688" y="96" font-size="11" fill="#475569">1.51 B/格流式见证 + 跨槽合批</text>
-              <text x="688" y="110" font-size="11" fill="#475569">在电路内秘密打开权重与 KV 列</text>
+              <text x="688" y="80" font-size="12" font-weight="600" fill="#0f172a">折叠 ZK-Basefold + FracLogUp-GKR</text>
+              <text x="688" y="96" font-size="11" fill="#475569">按算力抽查 153 / 315 块（零 Phase-2）</text>
+              <text x="688" y="110" font-size="11" fill="#475569">严格定长 8 MiB FPN2 / FPNZK2 容器</text>
               <text x="688" y="160" font-size="12" font-weight="600" fill="#0f172a">𝔽<tspan baseline-shift="sub" font-size="9">p</tspan><tspan baseline-shift="super" font-size="9">3</tspan> 扩域零知识证明</text>
               <text x="688" y="176" font-size="11" fill="#475569">不泄露标准 API 之外的任何信息</text>
-              <text x="688" y="230" font-size="12" font-weight="700" fill="#ffffff">普通 CPU 独立验证（i7-14700F 实测 12.0 秒）</text>
+              <text x="688" y="230" font-size="12" font-weight="700" fill="#ffffff">普通 CPU 验证（Rust ~10 ms | Py ~10.8 s）</text>
             </g>
           </svg>
         </div>
 
         <div class="grid-3" style="margin-top:18px;">
           <div class="card">
-            <h3><span class="en">Streaming Witness (<code>1.51 B/cell</code>)</span><span class="zh">流式紧凑见证（<code>1.51 B/格</code>）</span></h3>
+            <h3><span class="en">Folded Zero-Phase-2 Backend (<code>8 MiB</code>)</span><span class="zh">零 Phase-2 折叠后端（定长 <code>8 MiB</code>）</span></h3>
             <p>
-              <span class="en">Bit-packed integer columns, on-demand AES-256-CTR blinding regeneration, and cross-slot batching compress a 5.25-billion-cell full-security proof from ~260 GB down to 21.0 GiB host RAM with zero disk spill.</span>
-              <span class="zh">通过位打包整数见证、按需 AES-256-CTR 掩码重生成与跨槽合批，将 52.5 亿格全安全回复证明的主机内存从约 260 GB 压至 21.0 GiB，且零字节落盘。</span>
+              <span class="en">Batched folded ZK-Basefold + FracLogUp-GKR eliminates the Phase-2 circuit blow-up, compressing unsliced <code>Qwen3-0.6B</code> (<code>ExtSeed-153</code>, <code>Q=128</code>, <code>1.47B</code> cells) and 36-layer <code>Qwen3-4B</code> into an exact <code>8 MiB</code> container with <code>~10 ms</code> Rust / <code>10.8 s</code> Python verification.</span>
+              <span class="zh">批量折叠 ZK-Basefold 与 FracLogUp-GKR 彻底消除了 Phase-2 膨胀，将完整 <code>Qwen3-0.6B</code>（<code>ExtSeed-153</code>, <code>Q=128</code>, 14.7 亿格）与 36 层 <code>Qwen3-4B</code> 压进精确 <code>8 MiB</code> 容器，支持 Rust 约 <code>10 ms</code> 与 Python <code>10.8 s</code> 验证。</span>
             </p>
           </div>
           <div class="card">
             <h3><span class="en">Local Rounding-Contract Checks</span><span class="zh">按硬件算子规则核验浮点误差</span></h3>
             <p>
-              <span class="en">Each sampled block checks the engine's output against its own committed input using the operator's declared rounding bound—preventing cross-layer error blow-up with only 1.2%–2.7% vLLM throughput cost for <code>R32</code> numerics.</span>
+              <span class="en">Each sampled block checks the engine's output against its own committed input using the operator's declared rounding bound, preventing cross-layer error blow-up while keeping <code>R32</code> numerics overhead around 1.2%–2.7% on vLLM.</span>
               <span class="zh">在每个被抽查算子块上从引擎记录的真实输入出发传播单步舍入上限，误差不跨层爆炸；开启满足合约的 <code>R32</code> 浮点配置仅耗 1.2%–2.7% vLLM 吞吐。</span>
             </p>
           </div>
@@ -654,19 +664,19 @@
             </p>
           </div>
           <div class="card">
-            <span class="pill done"><span class="en">Stage 1 · Released (v0.3.0)</span><span class="zh">Stage 1 · 已发布 (v0.3.0)</span></span>
-            <h3><span class="en">End-to-End Prover, CPU Demo &amp; vLLM</span><span class="zh">全模型证明器、CPU 演示与 vLLM 闭环</span></h3>
+            <span class="pill done"><span class="en">v1.0.0 · Released</span><span class="zh">v1.0.0 · 已发布</span></span>
+            <h3><span class="en">Folded Zero-Phase-2 Backend, Rust <code>FPN2</code> &amp; 28 Lean Modules</span><span class="zh">统一零 Phase-2 折叠后端、Rust <code>FPN2</code> 与 28 Lean 模块</span></h3>
             <p>
-              <span class="en">Streaming 𝔽<sub>p</sub><sup>3</sup> prover (<code>1.51 B/cell</code>), full <code>Qwen3-0.6B</code> setup &amp; 315-draw reply proofs, standalone CPU verifier CLI, offline laptop demo, non-invasive <code>vLLM 0.33</code> integration, and 19th Lean module.</span>
-              <span class="zh">发布 𝔽<sub>p</sub><sup>3</sup> 流式证明器（<code>1.51 B/格</code>）、完整 <code>Qwen3-0.6B</code> 设置与 315 抽查回复证明、独立纯 CPU 验证器、离线演示包、无侵入 <code>vLLM 0.33</code> 原型与第 19 个 Lean 模块。</span>
+              <span class="en">Unified <code>multi_gkr</code> + <code>multi_pcs</code> folded prover (<code>0</code> Phase-2 cells, fixed <code>8 MiB</code> <code>FPNZK2</code>), zero-dependency Rust <code>fpn-verify</code> (<code>~10 ms</code> CPU), RTX 6000D dense/MoE validation (<code>Qwen3-0.6B</code>, <code>Qwen3-4B</code>, live <code>vLLM</code> <code>Qwen3-30B-A3B-FP8</code>), and 28 Lean 4 modules (696 declarations).</span>
+              <span class="zh">发布统一 <code>multi_gkr</code> + <code>multi_pcs</code> 折叠引擎（零 Phase-2、定长 <code>8 MiB</code> <code>FPNZK2</code>）、零依赖 Rust <code>fpn-verify</code>（<code>~10 ms</code> CPU）、RTX 6000D 稠密与 MoE 全线实测（<code>Qwen3-0.6B</code>、<code>Qwen3-4B</code>、真在线 <code>vLLM</code> <code>Qwen3-30B-A3B-FP8</code>）与 28 个 Lean 4 模块（696 条声明）。</span>
             </p>
           </div>
           <div class="card">
-            <span class="pill plan"><span class="en">Stage 2 · Planned</span><span class="zh">Stage 2 · 规划中</span></span>
-            <h3><span class="en">Multi-Architecture &amp; Low Overhead</span><span class="zh">跨架构隐藏原语槽与低成本优化</span></h3>
+            <span class="pill plan"><span class="en">v2 · Roadmap</span><span class="zh">v2 · 后续路线</span></span>
+            <h3><span class="en">Single Rust CLI for Interactive Replies &amp; Universal Architecture Hiding</span><span class="zh">全回复交互轮入 Rust 单一 CLI 与跨架构全隐藏</span></h3>
             <p>
-              <span class="en">Uniform primitive slots wired by hidden tables across Dense GQA, Sparse MoE, MLA, and Linear Attention; double-buffered async capture toward ≤5% online overhead &amp; batched Basefold openings.</span>
-              <span class="zh">通过隐藏连线表统一原语槽通吃稠密 GQA、稀疏 MoE、MLA 与线性注意力；以双缓冲异步采集与多项式打开批处理持续压降开销。</span>
+              <span class="en">Compile full 12-round interactive <code>reply_zk</code> circuits into a self-contained <code>CircuitDesc</code> for single-binary Rust verification, expand 5-in-1 shared-root topology hiding, and formalize Relation 2 / 6 in Lean 4.</span>
+              <span class="zh">将全回复 12 轮交互电路下沉为自包含 <code>CircuitDesc</code> 接入单一 Rust CLI，拓展五合一共享根全隐藏架构，并推进 Relation 2/6 的 Lean 4 形式化。</span>
             </p>
           </div>
         </div>
@@ -680,17 +690,17 @@
           <span class="zh">Lean 4 机器检验范围与边界</span>
         </h2>
         <p class="section-lead">
-          <span class="en">All 19 Lean 4.29.1 modules (219 declarations) build cleanly with zero <code>sorry</code> and only Lean's three standard axioms.</span>
-          <span class="zh">全库 19 个 Lean 4.29.1 模块（219 条定理声明）零 <code>sorry</code>、仅依赖 Lean 标准三条公理编译通过。</span>
+          <span class="en">All 28 Lean 4.29.1 modules (696 declarations) build cleanly with zero <code>sorry</code>, zero <code>native_decide</code>, and only Lean's three standard axioms.</span>
+          <span class="zh">全库 28 个 Lean 4.29.1 模块（696 条定理声明）零 <code>sorry</code>、禁 <code>native_decide</code>，仅依赖 Lean 标准三条公理编译通过。</span>
         </p>
 
         <div class="grid-2">
           <div class="card">
-            <span class="pill done"><span class="en">Machine-Checked in Lean 4 (19 Modules)</span><span class="zh">已由 Lean 4 机器证明（19 个模块）</span></span>
-            <h3><span class="en">Lifetime Soundness Composition, Sampling, Constrained Masks &amp; Blinding</span><span class="zh">逐轮可靠性组合定理、分桶采样、约束掩码与零知识盲化</span></h3>
+            <span class="pill done"><span class="en">Machine-Checked in Lean 4 (28 Modules / 696 Decls)</span><span class="zh">已由 Lean 4 机器证明（28 模块 / 696 声明）</span></span>
+            <h3><span class="en">Protocol Soundness, Executable <code>FPN2</code> Verifiers &amp; IR Gadgets</span><span class="zh">协议可靠性、可执行 <code>FPN2</code> 验证器与 IR 算子翻译校验</span></h3>
             <p>
-              <span class="en">Proves that given a round-by-round decomposition (<code>ProtocolRBRSpec</code>) satisfying the stated per-round escape bounds, bad-accept probability is at most <code>2^-40</code> over <code>2^64</code> adaptive queries (<code>ProtocolBridge</code>, <code>RoundByRound</code>), alongside all 16 sample-count table cells (<code>LifetimeSoundness</code>), completeness and zero-slack boundary-pair checks for bucketed top-p sampling (<code>BucketSampling</code>), multilinear Schwartz–Zippel soundness (<code>≤ 2^-186</code>) for compiled JSON-Schema vocabulary masks (<code>ConstrainedMask</code>), causal multi-round masking uniformity and Libra bijections (<code>MaskJoint</code>), pairwise MoE routing (<code>Gadgets</code>), coupled speculative decoding (<code>Speculative</code>), and algebraic equivalences for MLA, chunked linear attention, and PP/EP.</span>
-              <span class="zh">证明给定满足各轮逃逸上界的逐轮分解规格（<code>ProtocolRBRSpec</code>），在 <code>2^64</code> 次查询下坏接受概率 <code>≤ 2^-40</code>（<code>ProtocolBridge</code>、<code>RoundByRound</code>），并机检了 16 格抽查参数表（<code>LifetimeSoundness</code>）、分桶采样对任意温度与 top-p 不误拒诚实采样且边界词对检查零松弛（<code>BucketSampling</code>）、JSON Schema 词表掩码的多线性 Schwartz–Zippel 绑定（错误掩码通过率 <code>≤ 2^-186</code>，<code>ConstrainedMask</code>）、前缀可测多轮均匀盲化与 Libra 双射（<code>MaskJoint</code>），以及 MoE、耦合投机解码、MLA、分块线性注意力与多卡并行的代数恒等式。</span>
+              <span class="en">19 protocol modules (219 declarations) cover round-by-round lifetime soundness (<code>ProtocolBridge</code>, <code>RoundByRound</code>), all 16 sample-count table cells (<code>LifetimeSoundness</code>), bucketed top-p sampling (<code>BucketSampling</code>), JSON-Schema vocabulary-mask binding (<code>ConstrainedMask</code>), causal multi-round masking (<code>MaskJoint</code>), and modern architecture identities. 9 additional <code>FPN2</code> modules (477 declarations) formalize executable byte verifiers (<code>VerifyBytes</code>, <code>Fpn2Rel3</code>–<code>5</code>; 131/131 golden vectors), concrete Goldilocks 𝔽<sub>p</sub><sup>3</sup> soundness (<code>Fpn2Soundness</code>), six IR gadget families (<code>Fpn2Gadgets</code>), and <code>ProtocolRBRSpec</code> instantiation at <code>verifyBytesRel4</code>/<code>5</code> (<code>Fpn2EndToEnd</code>).</span>
+              <span class="zh">19 个协议模块（219 条声明）覆盖全生命周期逐轮可靠性（<code>ProtocolBridge</code>、<code>RoundByRound</code>）、16 格抽查表、分桶采样、JSON Schema 词表掩码绑定、因果多轮盲化与多架构代数恒等式；9 个新增 <code>FPN2</code> 模块（477 条声明）形式化可执行字节级验证器（<code>VerifyBytes</code>、<code>Fpn2Rel3</code>–<code>5</code>，131/131 黄金向量）、具体 Goldilocks 𝔽<sub>p</sub><sup>3</sup> 可靠性（<code>Fpn2Soundness</code>）、六大 IR 算子翻译校验（<code>Fpn2Gadgets</code>）及面向可执行验证器的端到端规约实例化（<code>Fpn2EndToEnd</code>）。</span>
             </p>
           </div>
           <div class="card">
@@ -712,8 +722,8 @@
           <span class="zh">端到端出证与真实模型硬件实测</span>
         </h2>
         <p class="section-lead">
-          <span class="en">Measured on a single consumer workstation (<strong>NVIDIA RTX 4070 Ti SUPER 16 GB</strong>, Intel i7-14700F, 25 GB RAM).</span>
-          <span class="zh">全部在单台消费级工作站（<strong>NVIDIA RTX 4070 Ti SUPER 16 GB</strong>，Intel i7-14700F，25 GB 内存）上实测。</span>
+          <span class="en">Public receipts under <code>benchmarks/</code> spanning <strong>NVIDIA RTX 6000D 84 GB</strong> (v1.0.0 folded backend &amp; Blackwell calibration), <strong>RTX 4070 Ti SUPER 16 GB</strong> (Stage 1 streaming baseline), and <strong>Apple M1 CPU</strong> (Rust <code>fpn-verify</code>).</span>
+          <span class="zh">全部实测 JSON 公开收录于 <code>benchmarks/</code>，覆盖 <strong>NVIDIA RTX 6000D 84 GB</strong>（v1.0.0 折叠后端与 Blackwell 标定）、<strong>RTX 4070 Ti SUPER 16 GB</strong>（Stage 1 流式基线）与 <strong>Apple M1 CPU</strong>（Rust <code>fpn-verify</code>）。</span>
         </p>
 
         <table>
@@ -722,33 +732,39 @@
               <th><span class="en">Benchmark</span><span class="zh">测试项目</span></th>
               <th><span class="en">Model &amp; Stack</span><span class="zh">测试模型与环境</span></th>
               <th><span class="en">Measured Result</span><span class="zh">实测结果</span></th>
-              <th><span class="en">Notes &amp; Current Gap</span><span class="zh">关键结论与当前差距</span></th>
+              <th><span class="en">Honest Scope &amp; Boundaries</span><span class="zh">口径与诚实边界</span></th>
             </tr>
           </thead>
           <tbody>
             <tr>
-              <td><strong><span class="en">Full 315-Draw Reply Proof</span><span class="zh">全安全 315 次抽查回复证明</span></strong></td>
-              <td>Unsliced <code>Qwen3-0.6B</code> (𝔽<sub>p</sub><sup>3</sup>, <code>T=152, T_pad=256</code>)</td>
-              <td><strong>5.25B cells</strong> · <strong>21.0 GiB RSS</strong> (<code>0 B</code> spill) · <strong>12.02 s CPU verify</strong></td>
-              <td><span class="en"><code>1.51 B/cell</code> streaming + cross-slot batching (<code>6,887</code> vectors); GPU prove takes <code>3,877.7 s</code> (~1,009× single-stream inference), <code>149.8 MB</code> proof.</span><span class="zh"><code>1.51 B/格</code> 流式内存 + 跨槽合批（<code>6,887</code> 向量）；当前单卡出证 <code>3,877.7 s</code>（约单路推理 1,009 倍），证明 <code>149.8 MB</code>。</span></td>
+              <td><strong><span class="en">v1.0 Folded Reply (<code>ExtSeed-153</code>, <code>Q=128</code>)</span><span class="zh">v1.0 折叠全回复（<code>ExtSeed-153</code>, <code>Q=128</code>）</span></strong></td>
+              <td>Unsliced <code>Qwen3-0.6B</code> (RTX 6000D, <code>102+51</code>, unique decoding <code>≤ 2^-106</code>)</td>
+              <td><strong>1.47B cells</strong> (<code>0</code> Phase-2) · <strong>8 MiB <code>FPNZK2</code></strong> · <strong>450.2 s</strong> prove (<code>569.8 s</code> total) · <strong>10.76 s</strong> CPU verify</td>
+              <td><span class="en"><code>99.7 GiB</code> peak RSS / <code>55.0 GiB</code> VRAM; <code>ε ≤ 2^-20</code> at <code>Q_samp ≤ 2^30</code>; Python verifier (<code>1.14 GiB</code> RSS); <code>Q=100</code> receipt also archived (<code>461.1 s</code>). Separate <code>8+4</code> matrix: <strong>14/14</strong> pass (incl. real 28L perturbed &amp; int4 weights).</span><span class="zh">峰值 <code>99.7 GiB</code> RAM / <code>55.0 GiB</code> 显存；<code>ε ≤ 2^-20</code>（<code>Q_samp ≤ 2^30</code>）；Python 验证器（<code>1.14 GiB</code>）；另归档 <code>Q=100</code> 回执（<code>461.1 s</code>）。独立 <code>8+4</code> 矩阵 <strong>14/14</strong> 全过（含真实 28 层改权重与 int4 权重）。</span></td>
             </tr>
             <tr>
-              <td><strong><span class="en">One-Time Commitment &amp; Setup Proof</span><span class="zh">一次性模型承诺与设置证明</span></strong></td>
-              <td>Unsliced <code>Qwen3-0.6B</code> (596M params, <code>R_max=2048</code>)</td>
-              <td><strong>94.2 s</strong> commit · <strong>8.67B cells</strong> · <strong>59.9 s CPU verify</strong></td>
-              <td><span class="en">Covers items (i)–(vi) over 𝔽<sub>p</sub><sup>3</sup> in <code>3,623.7 s</code> GPU time (<code>12.2 GiB</code> RSS, <code>3.54 GiB</code> VRAM pool, <code>353 MB</code> proof).</span><span class="zh">在 𝔽<sub>p</sub><sup>3</sup> 上完整证明第 (i)–(vi) 项，GPU 耗时 <code>3,623.7 s</code>，主机内存 <code>12.2 GiB</code>、显存池 <code>3.54 GiB</code>。</span></td>
+              <td><strong><span class="en">v1.0 Folded 4B Reply (Dev <code>4+2</code>)</span><span class="zh">v1.0 4B 折叠全回复（开发档 <code>4+2</code>）</span></strong></td>
+              <td>Unsliced <code>Qwen3-4B</code> (4.02B, 36L, RTX 6000D, <code>Q=100</code>)</td>
+              <td><strong>259.1M cells</strong> (<code>0</code> Phase-2) · <strong>8 MiB <code>FPNZK2</code></strong> · <strong>160.3 s</strong> prove (<code>273.0 s</code> total) · <strong>7.18 s</strong> CPU verify</td>
+              <td><span class="en"><code>655.4 s</code> one-time weight commit; <code>0</code> gadget errors across 36 layers (<code>58.2 GiB</code> RSS / <code>47.8 GiB</code> VRAM). Dev draw count <code>4+2</code> (production-draw 4B open).</span><span class="zh">一次性 4B 权重承诺 <code>655.4 s</code>，36 层 <code>0</code> 算子报错（<code>58.2 GiB</code> RAM / <code>47.8 GiB</code> 显存）；开发抽查档 <code>4+2</code>（生产抽查档待补）。</span></td>
             </tr>
             <tr>
-              <td><strong><span class="en">Live <code>vLLM 0.33</code> Serving &amp; Forgery Suite</span><span class="zh"><code>vLLM 0.33</code> 在线服务与防伪造测试</span></strong></td>
-              <td><code>vLLM 0.33</code> (<code>--cudagraph</code>) + <code>Qwen3-0.6B</code></td>
-              <td><code>R32</code> numerics <strong>−1.2%..−2.7%</strong> · <strong>9/9 E2E PASS</strong> · <strong>33/33 checks REJECTED</strong></td>
-              <td><span class="en">Zero Python callbacks on CUDA-graph replay; Stage 1 sync per-step D2H port harvest reduces decode throughput by 53%–85% (async double-buffering planned for Stage 2).</span><span class="zh">CUDA Graph 重放零 Python 回调；Stage 1 参考采集器采用每步同步 D2H 拷贝（解码吞吐下降 53%–85%，Stage 2 改为双缓冲异步流）。</span></td>
+              <td><strong><span class="en">Live <code>vLLM 0.33</code> 30B MoE Relation 6</span><span class="zh">真在线 <code>vLLM 0.33</code> 30B MoE 关系 6</span></strong></td>
+              <td><code>Qwen3-30B-A3B-FP8</code> (RTX 6000D) + Rust <code>fpn-verify</code></td>
+              <td><strong>45.1 s</strong> lazy precommit (<code>135 MiB</code> buffers, <code>192×</code> less) · <strong>1.49 s</strong> prove · <strong>23.4 ms</strong> Rust verify</td>
+              <td><span class="en"><code>64/64</code> integer-faithful tiles, <strong>0 B</strong> plaintext activations disclosed, all forgeries rejected. Component milestone: opens public weight tiles (<code>16.8 MB</code>).</span><span class="zh"><code>64/64</code> 整数保真瓦片、<strong>0 B</strong> 明文激活披露、伪造全拒；组件级里程碑（打开公开权重瓦片 <code>16.8 MB</code>）。</span></td>
             </tr>
             <tr>
-              <td><strong><span class="en">Honest FP &amp; 8-Mode Cheat Calibration</span><span class="zh">原生浮点零误拒与 8 类作弊检出</span></strong></td>
-              <td><code>Qwen3-0.6B</code>, <code>Llama-3.2-1B-Instruct</code>, <code>Qwen3-4B</code></td>
-              <td><strong>0 / 392,928</strong> bad blocks · <strong>97.3%–100%</strong> cheat cost flagged</td>
-              <td><span class="en">Catches PyTorch's default <code>bf16</code> split-K violation (up to 39×); bounds 4k–32k low-weight key-drop compute savings to <strong>5.9%–36.6%</strong> with scalar LSE.</span><span class="zh">抓出默认 <code>bf16</code> split-K 高达 39 倍违约；结合标量 LSE 将 4k–32k 丢弃低注意力权重键所能省下的算力上界压至 <strong>5.9%–36.6%</strong>。</span></td>
+              <td><strong><span class="en">Rust <code>FPN2</code> Relation 2 &amp; Calibration</span><span class="zh">Rust <code>FPN2</code> 关系 2 与五模型标定</span></strong></td>
+              <td>Apple M1 CPU (<code>Q=72</code>) · 5 Blackwell checkpoints (RTX 6000D)</td>
+              <td><strong>10.1 ms</strong> Rust / <strong>118.4 ms</strong> Python (<code>8 MiB</code>) · <strong>0 / 3.81M</strong> honest false rejections · <strong>−1.15%..−13.14%</strong> async capture</td>
+              <td><span class="en">Relation 2 demo runs a 64-row reference circuit (lowering 12-round <code>reply_zk</code> into Rust is next work). Async capture (6 <code>TIER_B</code> cells vs <code>numerics_r32</code>, <code>−1.15%</code> single-stream <code>b1,c256</code> to <code>−13.14%</code> <code>b8,c8192</code>, 0 extra syncs/overflows); fleet overhead <code>≤100%</code> uses <code>p_audit ≤ 1%</code> deterrence.</span><span class="zh">关系 2 Demo 验 64 行参考电路（12 轮下沉 Rust 属下一步）；异步采集 6 格相对 <code>numerics_r32</code>（单流 <code>b1,c256 −1.15%</code> 至 <code>b8,c8192 −13.14%</code>，0 额外同步/溢出）；全量集群开销 <code>≤100%</code> 依赖 <code>p_audit ≤ 1%</code> 概率抽审威慑。</span></td>
+            </tr>
+            <tr>
+              <td><strong><span class="en">Stage 1 Streaming Baseline (<code>NI-315</code>)</span><span class="zh">Stage 1 流式基线（<code>NI-315</code>）</span></strong></td>
+              <td>Unsliced <code>Qwen3-0.6B</code> (4070TiS 16 GB, <code>210+105</code>)</td>
+              <td><strong>5.25B cells</strong> · <strong>21.0 GiB</strong> RSS (<code>0 B</code> spill) · <strong>3,877.7 s</strong> GPU · <strong>12.02 s</strong> CPU verify</td>
+              <td><span class="en">Non-interactive <code>ε ≤ 2^-40</code> (<code>Q ≤ 2^64</code>), <code>1.51 B/cell</code> streaming, includes <code>116</code> hidden CoT tokens + 8.67B-cell <code>π_setup</code> (<code>59.9 s</code> CPU verify).</span><span class="zh">纯非交互 <code>ε ≤ 2^-40</code>（<code>Q ≤ 2^64</code>）、<code>1.51 B/格</code> 流式内存，含 <code>116</code> 隐藏 CoT token 与 86.7 亿格 <code>π_setup</code>（CPU 验 <code>59.9 s</code>）。</span></td>
             </tr>
           </tbody>
         </table>
@@ -761,8 +777,8 @@
       <div style="display:flex; justify-content:space-between; flex-wrap:wrap; gap:12px;">
         <div>
           <strong>FlashProve-Next</strong> · By Liang Song · Apache-2.0 License ·
-          <span class="en">Stage 1 Release (<code>v0.3.0</code>, November 2026)</span>
-          <span class="zh">Stage 1 发布版（<code>v0.3.0</code>，2026 年 11 月）</span>
+          <span class="en">Release <code>v1.0.0</code> (November 2026)</span>
+          <span class="zh">发布版 <code>v1.0.0</code>（2026 年 11 月）</span>
         </div>
         <div>
           <a href="https://github.com/s-JoL/FlashProve-Next" target="_blank" rel="noopener">GitHub</a> ·

@@ -1,0 +1,685 @@
+{
+ "bench": "tier2/bench_frontier_calibrate",
+ "mode": "real",
+ "evidence": "MEASURED",
+ "git_sha": "unknown",
+ "command": "bench/tier2/bench_frontier_calibrate.py --models-dir <WORK_DIR> --confirm-gpu --out benchmarks/certified/results/frontier_calibrate_rtx6000d.json",
+ "machine": "Linux-5.15.0-78-generic-x86_64-with-glibc2.35",
+ "soundness": {
+  "external_tight": {
+   "regime": "external_tight",
+   "draws": 100,
+   "draws_required": 100,
+   "per_attempt_bits_floor": 51,
+   "per_attempt_bits": 51.4573172829758,
+   "q_log2": 30,
+   "lifetime_spot_bits_floor": 21,
+   "lifetime_bits_floor": 20,
+   "target_bits": 20,
+   "meets_target": true,
+   "per_attempt_at_least_100": false
+  },
+  "external_light": {
+   "regime": "external_light",
+   "draws": 51,
+   "draws_required": 51,
+   "per_attempt_bits_floor": 51,
+   "per_attempt_bits": 51.0,
+   "q_log2": 30,
+   "lifetime_spot_bits_floor": 21,
+   "lifetime_bits_floor": 20,
+   "target_bits": 20,
+   "meets_target": true,
+   "per_attempt_at_least_100": false
+  },
+  "ni": {
+   "regime": "ni",
+   "draws": 105,
+   "draws_required": 105,
+   "per_attempt_bits_floor": 105,
+   "per_attempt_bits": 105.0,
+   "q_log2": 64,
+   "lifetime_spot_bits_floor": 41,
+   "lifetime_bits_floor": 40,
+   "target_bits": 40,
+   "meets_target": true,
+   "per_attempt_at_least_100": true
+  }
+ },
+ "models": [
+  {
+   "model": "Qwen3-30B-A3B-FP8",
+   "arch": [
+    "moe_router_topk",
+    "gqa",
+    "qk_norm"
+   ],
+   "evidence": "MEASURED",
+   "tokens": 1024,
+   "shapes": "config.json",
+   "not_covered": "attention kernels (GQA softmax, SWA + sinks, Gated DeltaNet recurrence) are not calibrated here: only Linear GEMMs, fused MoE expert GEMMs (FP8 block-128 FP8Experts.linear; MXFP4 block-32 triton matmul_ogs, raw rows re-run without the fused SwiGLU / scatter epilogue), the router logits and top-k margins, and the residual RMS floor are checked; the SwiGLU epilogue, the expert scatter-combine and the routing softmax are not",
+   "device": "NVIDIA RTX 6000D",
+   "format": {
+    "model_format": "fp8_e4m3_block128_fp32acc",
+    "gemm_contract": "fp8_e4m3_block128_fp32acc",
+    "contract_calibration": "schema_only",
+    "dot_relative_bound_log2": -3.9069772784815986,
+    "eta_log2": -126,
+    "activation_store_u": 0.0625,
+    "weight_exact_in_accumulator": false,
+    "exact_dequant_scale_exp_range_bf16": null,
+    "weight_commitment_one_mlp_matrix": {
+     "format": "fp8_e4m3_block128_w",
+     "elements": 1572864,
+     "scale_blocks": 96,
+     "bytes": 1573248,
+     "cells": 1572960,
+     "element_integer_bits": 19,
+     "scale_bits": 32,
+     "bits_per_element": 8.001953125
+    }
+   },
+   "gemm": {
+    "linear_calls": 193,
+    "linear_module_dtypes": {
+     "FP8Linear:float8_e4m3fn": 192,
+     "Linear:bfloat16": 1
+    },
+    "blocks": 197632,
+    "honest_bad_blocks": 0,
+    "honest_max_ratio": 0.653484682972006,
+    "requantised_weight_cheat_blocks": 197632,
+    "requantised_weight_cheat_bad_blocks": 196608,
+    "requantised_weight_cheat_detection_rate": 0.9948186528497409
+   },
+   "rms_floor": {
+    "min_rms": 0.009578192606568336,
+    "min_rms_per_layer": [
+     0.009578192606568336,
+     0.02602463960647583,
+     0.03505352512001991,
+     0.04898465797305107,
+     0.06372436136007309,
+     0.07490656524896622,
+     0.08802248537540436,
+     0.10268989205360413,
+     0.11130361258983612,
+     0.12235428392887115,
+     0.13051919639110565,
+     0.1494915634393692,
+     0.1537521928548813,
+     0.15751400589942932,
+     0.16662609577178955,
+     0.16899989545345306,
+     0.18505850434303284,
+     0.19653522968292236,
+     0.18957357108592987,
+     0.1872681975364685,
+     0.20305712521076202,
+     0.21156206727027893,
+     0.22859548032283783,
+     0.25541895627975464,
+     0.26338720321655273,
+     0.2555674612522125,
+     0.2639452815055847,
+     0.28287261724472046,
+     0.2990639805793762,
+     0.31539076566696167,
+     0.30514442920684814,
+     0.33252209424972534,
+     0.3357851505279541,
+     0.3551439642906189,
+     0.38828015327453613,
+     0.416698694229126,
+     0.40299251675605774,
+     0.40592652559280396,
+     0.38134053349494934,
+     0.42172202467918396,
+     0.4954335689544678,
+     0.5712516903877258,
+     0.6388592720031738,
+     0.8019152283668518,
+     0.9003978371620178,
+     0.8764867186546326,
+     1.0213361978530884,
+     1.3413066864013672,
+     1.3734714984893799
+    ],
+    "floor": 0.001,
+    "holds": true
+   },
+   "moe_router": {
+    "experts": 128,
+    "top_k": 8,
+    "min_topk_margin": 0.0,
+    "router_calls": 48,
+    "router_tokens": 49152,
+    "logit_units": "raw router logits",
+    "margin_p0001": 0.0,
+    "margin_p01": 0.0,
+    "margin_median": 0.0625,
+    "zero_margin_tokens": 4530,
+    "tau_max": 0.1714845448732376,
+    "tau_median": 0.09066193550825119,
+    "honest_router_bad_rows": 0,
+    "honest_router_max_ratio": 0.9235963457472643,
+    "expert_swap_cheat_tokens": 49152,
+    "expert_swap_cheat_detected": 5664,
+    "expert_swap_cheat_detection_rate": 0.115234375,
+    "expert_drop_cheat": "rejected unconditionally (index-list cardinality != top_k)"
+   },
+   "moe_experts": {
+    "fp8_expert_gate_up": {
+     "calls": 5345,
+     "blocks": 393216,
+     "honest_bad_blocks": 0,
+     "honest_max_ratio": 0.8488935569787167,
+     "requantised_weight_cheat_blocks": 393216,
+     "requantised_weight_cheat_bad_blocks": 393216,
+     "requantised_weight_cheat_detection_rate": 1.0
+    },
+    "fp8_expert_down": {
+     "calls": 5345,
+     "blocks": 393216,
+     "honest_bad_blocks": 0,
+     "honest_max_ratio": 0.8538174935699269,
+     "requantised_weight_cheat_blocks": 393216,
+     "requantised_weight_cheat_bad_blocks": 393216,
+     "requantised_weight_cheat_detection_rate": 1.0
+    },
+    "modules_hooked": 48
+   },
+   "cost": {
+    "regime": "external_tight",
+    "draws_per_pool": 100,
+    "lineage_units_per_draw": 6,
+    "context_tokens": 1024,
+    "sampled_cells_per_draw": 577689,
+    "cells_per_proof": 693226800,
+    "prover_gpu_s": 5.85776646,
+    "prover_gpu_s_label": "EXTRAPOLATED: reference-IR census x 8.45 ns/cell kernel pipeline (4070 Ti SUPER); excludes host-side sumcheck, transcript and witness generation",
+    "gate": 0.05,
+    "p_audit_max_if_cost_ratio": {
+     "1/20": 1.0,
+     "1/2": 0.1,
+     "1": 0.05,
+     "5": 0.01,
+     "50": 0.001
+    },
+    "serving_gpu_s": 0.13524737178037563,
+    "cost_ratio": 43.311499387302405,
+    "overhead_at_p_audit_1": 43.311499387302405,
+    "p_audit_max": 0.0011544278241879212,
+    "gate_status": "PASS only for p_audit <= 0.001154 (commit-all / prove-sampled)"
+   },
+   "status": "CALIBRATION_OK"
+  },
+  {
+   "model": "gpt-oss-20b",
+   "arch": [
+    "moe_router_topk",
+    "swa_sinks",
+    "gqa"
+   ],
+   "evidence": "MEASURED",
+   "tokens": 1024,
+   "shapes": "config.json",
+   "not_covered": "attention kernels (GQA softmax, SWA + sinks, Gated DeltaNet recurrence) are not calibrated here: only Linear GEMMs, fused MoE expert GEMMs (FP8 block-128 FP8Experts.linear; MXFP4 block-32 triton matmul_ogs, raw rows re-run without the fused SwiGLU / scatter epilogue), the router logits and top-k margins, and the residual RMS floor are checked; the SwiGLU epilogue, the expert scatter-combine and the routing softmax are not",
+   "device": "NVIDIA RTX 6000D",
+   "format": {
+    "model_format": "mxfp4_e2m1_block32_fp32acc",
+    "gemm_contract": "mxfp4_e2m1_block32_fp32acc",
+    "contract_calibration": "schema_only",
+    "dot_relative_bound_log2": -7.994617630241254,
+    "eta_log2": -126,
+    "activation_store_u": 0.0,
+    "weight_exact_in_accumulator": true,
+    "exact_dequant_scale_exp_range_bf16": [
+     -125,
+     125
+    ],
+    "weight_commitment_one_mlp_matrix": {
+     "format": "mxfp4_e2m1",
+     "elements": 8294400,
+     "scale_blocks": 259200,
+     "bytes": 4406400,
+     "cells": 8553600,
+     "element_integer_bits": 5,
+     "scale_bits": 8,
+     "bits_per_element": 4.25
+    }
+   },
+   "gemm": {
+    "linear_calls": 97,
+    "linear_module_dtypes": {
+     "Linear:bfloat16": 97
+    },
+    "blocks": 99328,
+    "honest_bad_blocks": 0,
+    "honest_max_ratio": 0.7174532884088949,
+    "requantised_weight_cheat_blocks": 99328,
+    "requantised_weight_cheat_bad_blocks": 99328,
+    "requantised_weight_cheat_detection_rate": 1.0
+   },
+   "rms_floor": {
+    "min_rms": 1.9871104955673218,
+    "min_rms_per_layer": [
+     1.9871104955673218,
+     2.3146932125091553,
+     2.4429214000701904,
+     2.550504446029663,
+     3.3130671977996826,
+     3.6849310398101807,
+     5.019277572631836,
+     6.061481952667236,
+     8.069926261901855,
+     8.810914993286133,
+     10.710423469543457,
+     12.57422924041748,
+     16.18519401550293,
+     18.488554000854492,
+     25.049152374267578,
+     30.598390579223633,
+     40.06621551513672,
+     46.036041259765625,
+     71.17925262451172,
+     87.83917236328125,
+     128.34051513671875,
+     137.351318359375,
+     216.70700073242188,
+     267.075439453125,
+     3.412019968032837
+    ],
+    "floor": 0.001,
+    "holds": true
+   },
+   "moe_router": {
+    "experts": 32,
+    "top_k": 4,
+    "min_topk_margin": 0.0,
+    "router_calls": 24,
+    "router_tokens": 24576,
+    "logit_units": "raw router logits",
+    "margin_p0001": 0.0,
+    "margin_p01": 0.0,
+    "margin_median": 0.072265625,
+    "zero_margin_tokens": 360,
+    "tau_max": 0.10656799376010895,
+    "tau_median": 0.04974749684333801,
+    "honest_router_bad_rows": 0,
+    "honest_router_max_ratio": 0.3899019118859162,
+    "expert_swap_cheat_tokens": 24576,
+    "expert_swap_cheat_detected": 9340,
+    "expert_swap_cheat_detection_rate": 0.3800455729166667,
+    "expert_drop_cheat": "rejected unconditionally (index-list cardinality != top_k)"
+   },
+   "moe_experts": {
+    "mxfp4_expert_gate_up": {
+     "calls": 764,
+     "blocks": 98304,
+     "honest_bad_blocks": 0,
+     "honest_max_ratio": 0.6838487498006746,
+     "requantised_weight_cheat_blocks": 98304,
+     "requantised_weight_cheat_bad_blocks": 98304,
+     "requantised_weight_cheat_detection_rate": 1.0
+    },
+    "mxfp4_expert_down": {
+     "calls": 764,
+     "blocks": 98304,
+     "honest_bad_blocks": 0,
+     "honest_max_ratio": 0.5836379084170087,
+     "requantised_weight_cheat_blocks": 98304,
+     "requantised_weight_cheat_bad_blocks": 98304,
+     "requantised_weight_cheat_detection_rate": 1.0
+    },
+    "modules_hooked": 24
+   },
+   "cost": {
+    "regime": "external_tight",
+    "draws_per_pool": 100,
+    "lineage_units_per_draw": 6,
+    "context_tokens": 1024,
+    "sampled_cells_per_draw": 472089,
+    "cells_per_proof": 566506800,
+    "prover_gpu_s": 4.78698246,
+    "prover_gpu_s_label": "EXTRAPOLATED: reference-IR census x 8.45 ns/cell kernel pipeline (4070 Ti SUPER); excludes host-side sumcheck, transcript and witness generation",
+    "gate": 0.05,
+    "p_audit_max_if_cost_ratio": {
+     "1/20": 1.0,
+     "1/2": 0.1,
+     "1": 0.05,
+     "5": 0.01,
+     "50": 0.001
+    },
+    "serving_gpu_s": 0.25386043048153323,
+    "cost_ratio": 18.856749162994205,
+    "overhead_at_p_audit_1": 18.856749162994205,
+    "p_audit_max": 0.0026515705102618365,
+    "gate_status": "PASS only for p_audit <= 0.002652 (commit-all / prove-sampled)"
+   },
+   "status": "CALIBRATION_OK"
+  },
+  {
+   "model": "Qwen3.5-0.8B",
+   "arch": [
+    "gated_deltanet",
+    "gqa"
+   ],
+   "evidence": "MEASURED",
+   "tokens": 1024,
+   "shapes": "config.json",
+   "not_covered": "attention kernels (GQA softmax, SWA + sinks, Gated DeltaNet recurrence) are not calibrated here: only Linear GEMMs, fused MoE expert GEMMs (FP8 block-128 FP8Experts.linear; MXFP4 block-32 triton matmul_ogs, raw rows re-run without the fused SwiGLU / scatter epilogue), the router logits and top-k margins, and the residual RMS floor are checked; the SwiGLU epilogue, the expert scatter-combine and the routing softmax are not",
+   "device": "NVIDIA RTX 6000D",
+   "format": {
+    "model_format": "bf16",
+    "gemm_contract": "bf16_fp32acc",
+    "contract_calibration": "calibrated",
+    "dot_relative_bound_log2": -7.997173977461302,
+    "eta_log2": -126,
+    "activation_store_u": 0.0,
+    "weight_exact_in_accumulator": true,
+    "exact_dequant_scale_exp_range_bf16": null,
+    "weight_commitment_one_mlp_matrix": {
+     "format": "bf16",
+     "elements": 3145728,
+     "scale_blocks": 0,
+     "bytes": 6291456,
+     "cells": 3145728,
+     "element_integer_bits": 262,
+     "scale_bits": 0,
+     "bits_per_element": 16.0
+    }
+   },
+   "gemm": {
+    "linear_calls": 187,
+    "linear_module_dtypes": {
+     "Linear:bfloat16": 187
+    },
+    "blocks": 191488,
+    "honest_bad_blocks": 0,
+    "honest_max_ratio": 0.5439900704253173,
+    "requantised_weight_cheat_blocks": 191488,
+    "requantised_weight_cheat_bad_blocks": 191488,
+    "requantised_weight_cheat_detection_rate": 1.0
+   },
+   "rms_floor": {
+    "min_rms": 0.015692654997110367,
+    "min_rms_per_layer": [
+     0.015692654997110367,
+     0.022132303565740585,
+     0.029465725645422935,
+     0.037467215210199356,
+     0.04331175982952118,
+     0.04532937332987785,
+     0.04934088885784149,
+     0.05336804687976837,
+     0.05044994875788689,
+     0.048424940556287766,
+     0.05006501078605652,
+     0.05176118016242981,
+     0.05232691019773483,
+     0.05741411820054054,
+     0.06567647308111191,
+     0.07598941028118134,
+     0.09334287792444229,
+     0.10523724555969238,
+     0.1204928383231163,
+     0.14366479218006134,
+     0.15396878123283386,
+     0.1698811799287796,
+     0.1843099594116211,
+     0.22665777802467346,
+     3.17665958404541
+    ],
+    "floor": 0.001,
+    "holds": true
+   },
+   "moe_router": {
+    "experts": 1,
+    "top_k": 1,
+    "min_topk_margin": null
+   },
+   "moe_experts": {},
+   "cost": {
+    "regime": "external_tight",
+    "draws_per_pool": 100,
+    "lineage_units_per_draw": 6,
+    "context_tokens": 1024,
+    "sampled_cells_per_draw": 357779,
+    "cells_per_proof": 429334800,
+    "prover_gpu_s": 3.62787906,
+    "prover_gpu_s_label": "EXTRAPOLATED: reference-IR census x 8.45 ns/cell kernel pipeline (4070 Ti SUPER); excludes host-side sumcheck, transcript and witness generation",
+    "gate": 0.05,
+    "p_audit_max_if_cost_ratio": {
+     "1/20": 1.0,
+     "1/2": 0.1,
+     "1": 0.05,
+     "5": 0.01,
+     "50": 0.001
+    },
+    "serving_gpu_s": 0.09542193294813235,
+    "cost_ratio": 38.01934154878181,
+    "overhead_at_p_audit_1": 38.01934154878181,
+    "p_audit_max": 0.001315120093172736,
+    "gate_status": "PASS only for p_audit <= 0.001315 (commit-all / prove-sampled)"
+   },
+   "status": "CALIBRATION_OK"
+  },
+  {
+   "model": "Llama-3.2-1B-Instruct",
+   "arch": [
+    "gqa"
+   ],
+   "evidence": "MEASURED",
+   "tokens": 1024,
+   "shapes": "config.json",
+   "not_covered": "attention kernels (GQA softmax, SWA + sinks, Gated DeltaNet recurrence) are not calibrated here: only Linear GEMMs, fused MoE expert GEMMs (FP8 block-128 FP8Experts.linear; MXFP4 block-32 triton matmul_ogs, raw rows re-run without the fused SwiGLU / scatter epilogue), the router logits and top-k margins, and the residual RMS floor are checked; the SwiGLU epilogue, the expert scatter-combine and the routing softmax are not",
+   "device": "NVIDIA RTX 6000D",
+   "format": {
+    "model_format": "bf16",
+    "gemm_contract": "bf16_fp32acc",
+    "contract_calibration": "calibrated",
+    "dot_relative_bound_log2": -7.995763023252849,
+    "eta_log2": -126,
+    "activation_store_u": 0.0,
+    "weight_exact_in_accumulator": true,
+    "exact_dequant_scale_exp_range_bf16": null,
+    "weight_commitment_one_mlp_matrix": {
+     "format": "bf16",
+     "elements": 16777216,
+     "scale_blocks": 0,
+     "bytes": 33554432,
+     "cells": 16777216,
+     "element_integer_bits": 262,
+     "scale_bits": 0,
+     "bits_per_element": 16.0
+    }
+   },
+   "gemm": {
+    "linear_calls": 113,
+    "linear_module_dtypes": {
+     "Linear:bfloat16": 113
+    },
+    "blocks": 115712,
+    "honest_bad_blocks": 0,
+    "honest_max_ratio": 0.6535926318230764,
+    "requantised_weight_cheat_blocks": 115712,
+    "requantised_weight_cheat_bad_blocks": 115712,
+    "requantised_weight_cheat_detection_rate": 1.0
+   },
+   "rms_floor": {
+    "min_rms": 0.015186610631644726,
+    "min_rms_per_layer": [
+     0.015186610631644726,
+     0.021963272243738174,
+     0.029599709436297417,
+     0.044382452964782715,
+     0.053521133959293365,
+     0.06743017584085464,
+     0.07740771770477295,
+     0.08499114215373993,
+     0.08934427052736282,
+     0.1019219234585762,
+     0.1270826756954193,
+     0.14025309681892395,
+     0.16346269845962524,
+     0.18938396871089935,
+     0.2285490334033966,
+     0.275789350271225,
+     1.5850096940994263
+    ],
+    "floor": 0.001,
+    "holds": true
+   },
+   "moe_router": {
+    "experts": 1,
+    "top_k": 1,
+    "min_topk_margin": null
+   },
+   "moe_experts": {},
+   "cost": {
+    "regime": "external_tight",
+    "draws_per_pool": 100,
+    "lineage_units_per_draw": 6,
+    "context_tokens": 1024,
+    "sampled_cells_per_draw": 727701,
+    "cells_per_proof": 873241200,
+    "prover_gpu_s": 7.37888814,
+    "prover_gpu_s_label": "EXTRAPOLATED: reference-IR census x 8.45 ns/cell kernel pipeline (4070 Ti SUPER); excludes host-side sumcheck, transcript and witness generation",
+    "gate": 0.05,
+    "p_audit_max_if_cost_ratio": {
+     "1/20": 1.0,
+     "1/2": 0.1,
+     "1": 0.05,
+     "5": 0.01,
+     "50": 0.001
+    },
+    "serving_gpu_s": 0.021739697083830833,
+    "cost_ratio": 339.4200071668956,
+    "overhead_at_p_audit_1": 339.4200071668956,
+    "p_audit_max": 0.00014731011414838193,
+    "gate_status": "PASS only for p_audit <= 0.0001473 (commit-all / prove-sampled)"
+   },
+   "status": "CALIBRATION_OK"
+  },
+  {
+   "model": "Qwen3-4B",
+   "arch": [
+    "gqa",
+    "qk_norm"
+   ],
+   "evidence": "MEASURED",
+   "tokens": 1024,
+   "shapes": "config.json",
+   "not_covered": "attention kernels (GQA softmax, SWA + sinks, Gated DeltaNet recurrence) are not calibrated here: only Linear GEMMs, fused MoE expert GEMMs (FP8 block-128 FP8Experts.linear; MXFP4 block-32 triton matmul_ogs, raw rows re-run without the fused SwiGLU / scatter epilogue), the router logits and top-k margins, and the residual RMS floor are checked; the SwiGLU epilogue, the expert scatter-combine and the routing softmax are not",
+   "device": "NVIDIA RTX 6000D",
+   "format": {
+    "model_format": "bf16",
+    "gemm_contract": "bf16_fp32acc",
+    "contract_calibration": "calibrated",
+    "dot_relative_bound_log2": -7.995058059245469,
+    "eta_log2": -126,
+    "activation_store_u": 0.0,
+    "weight_exact_in_accumulator": true,
+    "exact_dequant_scale_exp_range_bf16": null,
+    "weight_commitment_one_mlp_matrix": {
+     "format": "bf16",
+     "elements": 24903680,
+     "scale_blocks": 0,
+     "bytes": 49807360,
+     "cells": 24903680,
+     "element_integer_bits": 262,
+     "scale_bits": 0,
+     "bits_per_element": 16.0
+    }
+   },
+   "gemm": {
+    "linear_calls": 253,
+    "linear_module_dtypes": {
+     "Linear:bfloat16": 253
+    },
+    "blocks": 259072,
+    "honest_bad_blocks": 0,
+    "honest_max_ratio": 0.9379409735299384,
+    "requantised_weight_cheat_blocks": 259072,
+    "requantised_weight_cheat_bad_blocks": 259072,
+    "requantised_weight_cheat_detection_rate": 1.0
+   },
+   "rms_floor": {
+    "min_rms": 0.015352604910731316,
+    "min_rms_per_layer": [
+     0.015352604910731316,
+     0.10841353982686996,
+     0.14258354902267456,
+     0.1645573526620865,
+     0.20272214710712433,
+     0.31932517886161804,
+     0.4051061272621155,
+     0.4828264117240906,
+     0.5186935067176819,
+     0.5678449869155884,
+     0.5722355246543884,
+     0.6071062684059143,
+     0.6131606101989746,
+     0.6543959379196167,
+     0.6141831874847412,
+     0.6636083722114563,
+     0.6183801889419556,
+     0.6325610280036926,
+     0.6961709856987,
+     0.7400287389755249,
+     0.9058564305305481,
+     1.017868161201477,
+     1.0232845544815063,
+     1.1742912530899048,
+     1.3938148021697998,
+     1.7619731426239014,
+     2.0897226333618164,
+     2.2709743976593018,
+     2.5047836303710938,
+     2.8868234157562256,
+     3.389108419418335,
+     4.006303310394287,
+     4.696072101593018,
+     5.107197284698486,
+     5.604132652282715,
+     7.658477783203125,
+     1.336492896080017
+    ],
+    "floor": 0.001,
+    "holds": true
+   },
+   "moe_router": {
+    "experts": 1,
+    "top_k": 1,
+    "min_topk_margin": null
+   },
+   "moe_experts": {},
+   "cost": {
+    "regime": "external_tight",
+    "draws_per_pool": 100,
+    "lineage_units_per_draw": 6,
+    "context_tokens": 1024,
+    "sampled_cells_per_draw": 971413,
+    "cells_per_proof": 1165695600,
+    "prover_gpu_s": 9.85012782,
+    "prover_gpu_s_label": "EXTRAPOLATED: reference-IR census x 8.45 ns/cell kernel pipeline (4070 Ti SUPER); excludes host-side sumcheck, transcript and witness generation",
+    "gate": 0.05,
+    "p_audit_max_if_cost_ratio": {
+     "1/20": 1.0,
+     "1/2": 0.1,
+     "1": 0.05,
+     "5": 0.01,
+     "50": 0.001
+    },
+    "serving_gpu_s": 0.07038625919570525,
+    "cost_ratio": 139.9439028662149,
+    "overhead_at_p_audit_1": 139.9439028662149,
+    "p_audit_max": 0.0003572860194402292,
+    "gate_status": "PASS only for p_audit <= 0.0003573 (commit-all / prove-sampled)"
+   },
+   "status": "CALIBRATION_OK"
+  }
+ ],
+ "ok": true
+}

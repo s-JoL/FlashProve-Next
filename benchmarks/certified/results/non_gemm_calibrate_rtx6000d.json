@@ -1,0 +1,342 @@
+{
+ "bench": "tier2/bench_non_gemm_calibrate",
+ "mode": "real",
+ "evidence": "MEASURED",
+ "git_sha": "58976aacce2c87f7301eade1136cf6261833fc86",
+ "strict_isfinite_guard": true,
+ "command": "bench/tier2/bench_non_gemm_calibrate.py --confirm-gpu --out <RUN_DIR>",
+ "machine": "Linux-5.15.0-78-generic-x86_64-with-glibc2.35",
+ "constants": {
+  "circuit_norm_lift": "2^-32",
+  "eta_bf16": "2^-126",
+  "attn_key_tile": 64,
+  "attn_split_steps": 8,
+  "rms_floor": 0.001,
+  "lrec_enclosures": {
+   "torch_chunk_gated_delta_rule": "LREC_CHUNK_WY_ENCLOSURE_V1",
+   "torch_recurrent_gated_delta_rule": "LREC_SEQ_ENCLOSURE_V0"
+  },
+  "lrec_chunk": 64
+ },
+ "operators_by_model": {
+  "Qwen3-30B-A3B-FP8": [
+   "gqa_softmax",
+   "rmsnorm"
+  ],
+  "gpt-oss-20b": [
+   "swa_sinks",
+   "rmsnorm"
+  ],
+  "Qwen3.5-0.8B": [
+   "lrec",
+   "rmsnorm"
+  ],
+  "Llama-3.2-1B-Instruct": [
+   "gqa_softmax",
+   "rmsnorm"
+  ],
+  "Qwen3-4B": [
+   "gqa_softmax",
+   "rmsnorm"
+  ]
+ },
+ "models": [
+  {
+   "model": "Qwen3-30B-A3B-FP8",
+   "evidence": "MEASURED",
+   "tokens": 512,
+   "device": "NVIDIA RTX 6000D",
+   "operators": {
+    "gqa_softmax": {
+     "kernel": "fp32acc",
+     "attention_calls": 48,
+     "mask_mismatch_rows": 0,
+     "skipped_batches": 0,
+     "norm_lift": "2^-32 uncapped",
+     "eta_bf16": "2^-126",
+     "groups": 764,
+     "honest_bad_groups": 0,
+     "domain_failures": 0,
+     "max_ratio": 0.562498,
+     "lse_max_ratio": 0.013444,
+     "min_den_margin": 0.999529,
+     "r_lse_log2_max": -10.239499,
+     "cheat_groups": 760,
+     "truncated_window_rejected": 760,
+     "dropped_top_key_rejected": 760,
+     "sink_cheat_groups": 0,
+     "dropped_sink_rejected": 0,
+     "score_checks": 0,
+     "score_max_ratio": 0.0
+    },
+    "rmsnorm": {
+     "rows": 934400,
+     "honest_bad_rows": 0,
+     "max_ratio": 0.983994,
+     "min_rms": 0.009578,
+     "min_rms_all_norms": 0.005119,
+     "max_outlier_ratio": 45.236904,
+     "floor_violations": 0,
+     "cheat_rows": 934400,
+     "wrong_gain_rejected": 934400,
+     "skipped_norm_rejected": 933307,
+     "exact_rows": 772,
+     "exact_bad_rows": 0,
+     "exact_max_ratio": 0.984012,
+     "calls": {
+      "Qwen3MoeRMSNorm:norm_bf16_then_gain:residual": 97,
+      "Qwen3MoeRMSNorm:norm_bf16_then_gain:qk_norm": 96
+     },
+     "not_covered": {},
+     "floor": 0.001,
+     "floor_holds": true
+    }
+   },
+   "status": "CALIBRATION_OK"
+  },
+  {
+   "model": "gpt-oss-20b",
+   "evidence": "MEASURED",
+   "tokens": 512,
+   "device": "NVIDIA RTX 6000D",
+   "operators": {
+    "swa_sinks": {
+     "windows": [
+      0,
+      128
+     ],
+     "eager_replica_mismatch": 0,
+     "sink_logit": {
+      "kernel": "eager_observed",
+      "attention_calls": 24,
+      "mask_mismatch_rows": 0,
+      "skipped_batches": 0,
+      "sink_heads_checked": 6144,
+      "semantics": "one learned logit per head, zero value row",
+      "groups": 768,
+      "honest_bad_groups": 0,
+      "domain_failures": 0,
+      "max_ratio": 0.681795,
+      "lse_max_ratio": 0.001806,
+      "min_den_margin": 0.999906,
+      "r_lse_log2_max": -11.892619,
+      "cheat_groups": 760,
+      "truncated_window_rejected": 751,
+      "dropped_top_key_rejected": 760,
+      "sink_cheat_groups": 768,
+      "dropped_sink_rejected": 764,
+      "score_checks": 1341184,
+      "score_max_ratio": 0.557943
+     }
+    },
+    "rmsnorm": {
+     "rows": 25088,
+     "honest_bad_rows": 0,
+     "max_ratio": 0.993821,
+     "min_rms": 2.022203,
+     "min_rms_all_norms": 2.022203,
+     "max_outlier_ratio": 53.565167,
+     "floor_violations": 0,
+     "cheat_rows": 25088,
+     "wrong_gain_rejected": 25088,
+     "skipped_norm_rejected": 25088,
+     "exact_rows": 194,
+     "exact_bad_rows": 0,
+     "exact_max_ratio": 0.993859,
+     "calls": {
+      "GptOssRMSNorm:gain_fp32_one_store:residual": 49
+     },
+     "not_covered": {},
+     "floor": 0.001,
+     "floor_holds": true
+    }
+   },
+   "status": "CALIBRATION_OK"
+  },
+  {
+   "model": "Qwen3.5-0.8B",
+   "evidence": "MEASURED",
+   "tokens": 512,
+   "device": "NVIDIA RTX 6000D",
+   "operators": {
+    "lrec": {
+     "enclosure": "LREC_CHUNK_WY_ENCLOSURE_V1",
+     "enclosure_by_kernel": {
+      "torch_chunk_gated_delta_rule": "LREC_CHUNK_WY_ENCLOSURE_V1"
+     },
+     "reference": "fp64: the sequential recurrence (V0 template) / the same chunked algorithm (V1 template); reference_gap_max is their distance",
+     "calls": 18,
+     "kernels": {
+      "torch_chunk_gated_delta_rule": 18
+     },
+     "heads": 288,
+     "tokens": 147456,
+     "honest_bad_tokens": 0,
+     "max_ratio": 0.987707,
+     "zero_decay_rejected_heads": 287,
+     "state_reset_rejected_heads": 287,
+     "state_checks": 36864,
+     "state_bad": 0,
+     "state_max_ratio": 0.015175,
+     "domain_failures": 0,
+     "unsupported_calls": 0,
+     "zero_decay_state_rejected_heads": 287,
+     "state_reset_state_rejected_heads": 146,
+     "chunk_wy": {
+      "calls": 18,
+      "chunk_size": 64,
+      "max_chunks": 8,
+      "inv_inf_norm_max": 7.596932,
+      "cond_inf_max": 153.559751,
+      "reference_gap_max": "3.908e-14",
+      "state_radius_over_v0_min": 0.237649,
+      "state_radius_over_v0_median": 6.434541,
+      "output_radius_over_v0_median": 1.289675,
+      "terms": "key scale through the exact contraction (theta); cumsum of log-decay (gamma_{C-1}); Gram matmul (gamma_n); two unit-triangular solves through |A^-1| of each chunk (gamma_C); U - W S; the C-term products K~^T D and L D (gamma_C); S exp(G_{C-1}).  Any-order gamma_n = n u / (1 - n u), no lane depth."
+     },
+     "sequential_v0": {
+      "enclosure": "LREC_SEQ_ENCLOSURE_V0",
+      "role": "diagnostic: the same chunked-kernel calls against the sequential template's radii",
+      "tokens": 147456,
+      "honest_bad_tokens": 0,
+      "max_ratio": 0.98781,
+      "state_checks": 36864,
+      "state_bad": 11,
+      "state_max_ratio": 1.268252
+     }
+    },
+    "rmsnorm": {
+     "rows": 55808,
+     "honest_bad_rows": 0,
+     "max_ratio": 0.995047,
+     "min_rms": 0.016551,
+     "min_rms_all_norms": 0.016551,
+     "max_outlier_ratio": 25.987147,
+     "floor_violations": 0,
+     "cheat_rows": 55808,
+     "wrong_gain_rejected": 55808,
+     "skipped_norm_rejected": 55808,
+     "exact_rows": 242,
+     "exact_bad_rows": 0,
+     "exact_max_ratio": 0.995101,
+     "calls": {
+      "Qwen3_5RMSNorm:one_plus_gain_fp32_one_store:residual": 49,
+      "Qwen3_5RMSNorm:one_plus_gain_fp32_one_store:qk_norm": 12
+     },
+     "not_covered": {
+      "Qwen3_5RMSNormGated": 18
+     },
+     "floor": 0.001,
+     "floor_holds": true
+    }
+   },
+   "status": "CALIBRATION_OK"
+  },
+  {
+   "model": "Llama-3.2-1B-Instruct",
+   "evidence": "MEASURED",
+   "tokens": 512,
+   "device": "NVIDIA RTX 6000D",
+   "operators": {
+    "gqa_softmax": {
+     "kernel": "fp32acc",
+     "attention_calls": 16,
+     "mask_mismatch_rows": 0,
+     "skipped_batches": 0,
+     "norm_lift": "2^-32 uncapped",
+     "eta_bf16": "2^-126",
+     "groups": 512,
+     "honest_bad_groups": 0,
+     "domain_failures": 0,
+     "max_ratio": 0.503962,
+     "lse_max_ratio": 0.002835,
+     "min_den_margin": 0.999532,
+     "r_lse_log2_max": -10.25326,
+     "cheat_groups": 512,
+     "truncated_window_rejected": 512,
+     "dropped_top_key_rejected": 512,
+     "sink_cheat_groups": 0,
+     "dropped_sink_rejected": 0,
+     "score_checks": 0,
+     "score_max_ratio": 0.0
+    },
+    "rmsnorm": {
+     "rows": 16896,
+     "honest_bad_rows": 0,
+     "max_ratio": 0.983242,
+     "min_rms": 0.015187,
+     "min_rms_all_norms": 0.015187,
+     "max_outlier_ratio": 28.149599,
+     "floor_violations": 0,
+     "cheat_rows": 16896,
+     "wrong_gain_rejected": 16896,
+     "skipped_norm_rejected": 16896,
+     "exact_rows": 132,
+     "exact_bad_rows": 0,
+     "exact_max_ratio": 0.98327,
+     "calls": {
+      "LlamaRMSNorm:norm_bf16_then_gain:residual": 33
+     },
+     "not_covered": {},
+     "floor": 0.001,
+     "floor_holds": true
+    }
+   },
+   "status": "CALIBRATION_OK"
+  },
+  {
+   "model": "Qwen3-4B",
+   "evidence": "MEASURED",
+   "tokens": 512,
+   "device": "NVIDIA RTX 6000D",
+   "operators": {
+    "gqa_softmax": {
+     "kernel": "fp32acc",
+     "attention_calls": 36,
+     "mask_mismatch_rows": 0,
+     "skipped_batches": 0,
+     "norm_lift": "2^-32 uncapped",
+     "eta_bf16": "2^-126",
+     "groups": 1152,
+     "honest_bad_groups": 0,
+     "domain_failures": 0,
+     "max_ratio": 0.618024,
+     "lse_max_ratio": 0.009981,
+     "min_den_margin": 0.999615,
+     "r_lse_log2_max": -10.486888,
+     "cheat_groups": 1144,
+     "truncated_window_rejected": 1144,
+     "dropped_top_key_rejected": 1144,
+     "sink_cheat_groups": 0,
+     "dropped_sink_rejected": 0,
+     "score_checks": 0,
+     "score_max_ratio": 0.0
+    },
+    "rmsnorm": {
+     "rows": 774656,
+     "honest_bad_rows": 0,
+     "max_ratio": 0.984,
+     "min_rms": 0.015353,
+     "min_rms_all_norms": 0.013049,
+     "max_outlier_ratio": 49.970306,
+     "floor_violations": 0,
+     "cheat_rows": 774656,
+     "wrong_gain_rejected": 774656,
+     "skipped_norm_rejected": 772456,
+     "exact_rows": 579,
+     "exact_bad_rows": 0,
+     "exact_max_ratio": 0.984023,
+     "calls": {
+      "Qwen3RMSNorm:norm_bf16_then_gain:residual": 73,
+      "Qwen3RMSNorm:norm_bf16_then_gain:qk_norm": 72
+     },
+     "not_covered": {},
+     "floor": 0.001,
+     "floor_holds": true
+    }
+   },
+   "status": "CALIBRATION_OK"
+  }
+ ],
+ "ok": true
+}

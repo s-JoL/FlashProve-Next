@@ -132,7 +132,9 @@ def prove_and_verify(prf, stmt, wit, cheat, fast_honest_build_only=False):
             return None, "accepted"
     Z.FORCE = bool(cheat)
     try:
-        pf, _ = RZ.prove(prf, stmt, wit, B=CPU)
+        # CPU-only CI uses the vectorized NumPy/C++ backend for TinyDense (8.15M cells);
+        # GPU/production callers use the default folded CUDA backend (`backend="folded"`).
+        pf, _ = RZ.prove(prf, stmt, wit, B=CPU, backend="legacy")
     except Z.ProofError as e:
         assert cheat, f"honest prover failed: {e}"
         return None, f"rejected before proving ({e})"

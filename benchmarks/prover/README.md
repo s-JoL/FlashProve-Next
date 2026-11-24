@@ -53,15 +53,37 @@ Covers 9 live HTTP cases against `fpn_vllm_server.py` + `prover_daemon.py` + sta
 
 ## 4. Reproducing the Full-Model Benchmarks
 
+### v1.0.0 Folded Backend (RTX 6000D / 80 GB+ GPU)
+
 ```bash
-# Full-security 315-draw Qwen3-0.6B reply proof (requires ~21 GiB RAM & 12 GiB VRAM)
+# 1. Qwen3-0.6B production ExtSeed-153 (M_C=102, M_G=51, Q=100, fixed 8 MiB FPNZK2, 0 Phase-2)
+python benchmarks/prover/bench_qwen_reply.py capture --model /path/to/Qwen3-0.6B --t-pad 256 --out /var/tmp/fpn-v1-06b/cap.npz
+python benchmarks/prover/bench_qwen_reply.py commit  --model /path/to/Qwen3-0.6B --cap /var/tmp/fpn-v1-06b/cap.npz --store /var/tmp/fpn-v1-06b/store
+python benchmarks/prover/bench_qwen_reply.py prove   --model /path/to/Qwen3-0.6B --cap /var/tmp/fpn-v1-06b/cap.npz --store /var/tmp/fpn-v1-06b/store --out-dir /var/tmp/fpn-v1-06b/out --m-c 102 --m-g 51 --backend folded --challenge-mode external_seed --queries 100 --pad-to-bytes 8388608
+CUDA_VISIBLE_DEVICES="" python benchmarks/prover/bench_qwen_reply.py verify --out-dir /var/tmp/fpn-v1-06b/out --json-out /var/tmp/fpn-v1-06b/result.json
+
+# 2. Qwen3-0.6B 14-case end-to-end cheating matrix (8+4 draws, Q=100, real 28-layer perturbed & int4 weight forwards)
+python benchmarks/prover/bench_v1_cheating_matrix.py --model /path/to/Qwen3-0.6B --cap /var/tmp/fpn-v1-06b/cap.npz --store /var/tmp/fpn-v1-06b/store --m-c 8 --m-g 4 --queries 100 --json-out /var/tmp/fpn-v1-06b/cheat_matrix.json
+
+# 3. Full unsliced 4.02B 36-layer Qwen3-4B (dev 4+2 draws, Q=100, fixed 8 MiB FPNZK2)
+python benchmarks/prover/bench_qwen_reply.py capture --model /path/to/Qwen3-4B --t-pad 128 --max-new-tokens 48 --out /var/tmp/fpn-v1-4b/cap.npz
+python benchmarks/prover/bench_qwen_reply.py commit  --model /path/to/Qwen3-4B --cap /var/tmp/fpn-v1-4b/cap.npz --store /var/tmp/fpn-v1-4b/store
+python benchmarks/prover/bench_qwen_reply.py prove   --model /path/to/Qwen3-4B --cap /var/tmp/fpn-v1-4b/cap.npz --store /var/tmp/fpn-v1-4b/store --out-dir /var/tmp/fpn-v1-4b/out --m-c 4 --m-g 2 --backend folded --challenge-mode external_seed --queries 100 --pad-to-bytes 8388608
+CUDA_VISIBLE_DEVICES="" python benchmarks/prover/bench_qwen_reply.py verify --out-dir /var/tmp/fpn-v1-4b/out --json-out /var/tmp/fpn-v1-4b/result.json
+```
+
+### Stage 1 Historical Baseline (`zk_flat` Legacy Streaming, NI-315)
+
+*(Note: `results/qwen3_06b_reply_315.json` was recorded with `--backend legacy --challenge-mode ni` at `T_QUERIES = 150`; current legacy `zk_flat.T_QUERIES` is `168`. Output is written to `/var/tmp/...` to avoid overwriting archived receipts.)*
+
+```bash
 python benchmarks/prover/bench_qwen_reply.py capture --model /path/to/Qwen3-0.6B --t-pad 256 --out /var/tmp/fpn-qwen315/cap.npz
 python benchmarks/prover/bench_qwen_reply.py commit  --model /path/to/Qwen3-0.6B --cap /var/tmp/fpn-qwen315/cap.npz --store /var/tmp/fpn-qwen315/store
-python benchmarks/prover/bench_qwen_reply.py prove   --model /path/to/Qwen3-0.6B --cap /var/tmp/fpn-qwen315/cap.npz --store /var/tmp/fpn-qwen315/store --out-dir /var/tmp/fpn-qwen315 --m-c 210 --m-g 105
-CUDA_VISIBLE_DEVICES="" python benchmarks/prover/bench_qwen_reply.py verify --out-dir /var/tmp/fpn-qwen315 --json-out benchmarks/prover/results/qwen3_06b_reply_315.json
+python benchmarks/prover/bench_qwen_reply.py prove   --model /path/to/Qwen3-0.6B --cap /var/tmp/fpn-qwen315/cap.npz --store /var/tmp/fpn-qwen315/store --out-dir /var/tmp/fpn-qwen315 --m-c 210 --m-g 105 --backend legacy --challenge-mode ni
+CUDA_VISIBLE_DEVICES="" python benchmarks/prover/bench_qwen_reply.py verify --out-dir /var/tmp/fpn-qwen315 --json-out /var/tmp/fpn-qwen315/reply_315.json
 
 # vLLM 0.33 serving throughput comparison (stock vs. R32 numerics vs. full capture)
 python integrations/vllm/bench_serving_overhead.py \
     --model /path/to/Qwen3-0.6B \
-    --out benchmarks/prover/results/vllm_serving_overhead_qwen3_06b.json
+    --out /var/tmp/fpn-qwen315/vllm_serving_overhead.json
 ```

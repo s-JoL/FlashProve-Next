@@ -367,10 +367,27 @@ def u_of(limbs):
     return sum(int(x) << (16 * k) for k, x in enumerate(limbs))
 
 
-def _core_dict(st):
+def _base_core_dict(st):
     core = {k: st[k] for k in CORE_KEYS}
     if st.get("api_meta") is not None:
         core["api_meta"] = st["api_meta"]
+    return core
+
+
+def precommit_cpre(st):
+    """Protocol v2 pre-challenge commitment C_pre = B256(base_core) returned before external seed c_ext."""
+    return hashlib.blake2b(
+        json.dumps(_base_core_dict(st), sort_keys=True, separators=(",", ":")).encode(),
+        digest_size=32, person=b"FPN2-CPRE-V2\0\0\0\0",
+    ).digest()
+
+
+def _core_dict(st):
+    core = _base_core_dict(st)
+    if st.get("challenge_mode") == "external_seed":
+        core["challenge_mode"] = "external_seed"
+        core["c_pre"] = st["c_pre"]
+        core["c_ext"] = st["c_ext"]
     return core
 
 
@@ -447,9 +464,10 @@ def turn_state(prf, com, api, hist, nonce_c, nonce_s, r, turn=0, sess=None, st_p
             {"r": list(r), "prev": prev_bundle}, nxt)
 
 
-def statement(prf, com, R, api=None, st_part=None):
+def statement(prf, com, R, api=None, st_part=None, *, c_ext=None):
     """api: the standard-API view {req_tokens, n_reason (usage.reasoning_tokens), vis_tokens, optional api_meta}.  T (which
-    includes the hidden system prompt) and L (architecture) are NOT public: the draws are computed in-circuit."""
+    includes the hidden system prompt) and L (architecture) are NOT public: the draws are computed in-circuit.
+    c_ext: optional 32-byte external challenge seed (Protocol v2 external-seed mode with C_pre anti-retry)."""
     api = api or {"req_tokens": [], "n_reason": 0, "vis_tokens": []}
     lay = com["layout"]
     assert lay.n_vec_rows == 1 and lay.vec_len <= prf.VEC_PAD, "gain vectors must fit the profile's single vec row cap"
@@ -463,6 +481,13 @@ def statement(prf, com, R, api=None, st_part=None):
         st["api_meta"] = json.loads(json.dumps(api["api_meta"]))
     assert st_part is not None, "statement needs the state part (turn_state)"
     st["st"] = st_part
+    if c_ext is not None:
+        ce = bytes.fromhex(c_ext) if isinstance(c_ext, str) else bytes(c_ext)
+        if len(ce) != 32:
+            raise ValueError("c_ext must be 32 bytes")
+        st["challenge_mode"] = "external_seed"
+        st["c_pre"] = precommit_cpre(st).hex()
+        st["c_ext"] = ce.hex()
     core = _core_dict(st)
     st["u_draws"] = draw_seeds(core, prf.M_C)
     st["u_att"] = att_draws(st["u_draws"])
@@ -476,9 +501,37 @@ def att_draws(u_draws):
                            "little") & ((1 << AZ.UB) - 1) for u in u_draws]
 
 
-def check_statement(prf, st):
+def check_statement(prf, st, *, expected_c_pre=None, expected_c_ext=None, require_external_pins=False):
     if int(st.get("M_G", 0)) != prf.M_G:
         raise Z.ProofError("M_G of the statement differs from the profile")
+    cmode = st.get("challenge_mode")
+    if cmode is not None:
+        if cmode != "external_seed":
+            raise Z.ProofError(f"unsupported challenge_mode {cmode!r}")
+        recomputed = precommit_cpre(st).hex()
+        if not isinstance(st.get("c_pre"), str) or st["c_pre"] != recomputed:
+            raise Z.ProofError("E_CPRE_MISMATCH: statement c_pre does not match committed base core")
+        raw_cext = st.get("c_ext")
+        if not isinstance(raw_cext, str):
+            raise Z.ProofError("invalid c_ext type in statement (expected 64-hex string)")
+        try:
+            ce = bytes.fromhex(raw_cext)
+        except ValueError:
+            raise Z.ProofError("invalid c_ext hex in statement") from None
+        if len(ce) != 32 or raw_cext != ce.hex():
+            raise Z.ProofError("c_ext must be canonical 32-byte lowercase hex")
+        if require_external_pins and (expected_c_pre is None or expected_c_ext is None):
+            raise Z.ProofError("E_CPRE_UNPINNED: external_seed verification requires pre-recorded expected_c_pre and expected_c_ext")
+        if expected_c_pre is not None:
+            exp_p = expected_c_pre.hex() if isinstance(expected_c_pre, (bytes, bytearray)) else str(expected_c_pre)
+            if st["c_pre"] != exp_p:
+                raise Z.ProofError("E_CPRE_MISMATCH: statement c_pre differs from pre-recorded commitment")
+        if expected_c_ext is not None:
+            exp_e = expected_c_ext.hex() if isinstance(expected_c_ext, (bytes, bytearray)) else str(expected_c_ext)
+            if raw_cext != exp_e:
+                raise Z.ProofError("E_CEXT_MISMATCH: statement c_ext differs from released external seed")
+    elif expected_c_pre is not None or expected_c_ext is not None:
+        raise Z.ProofError("E_CPRE_MISMATCH: expected external_seed mode when expected_c_pre/expected_c_ext pinned")
     core = _core_dict(st)
     if (st["u_draws"] != draw_seeds(core, prf.M_C) or st["u_att"] != att_draws(st["u_draws"])
             or st.get("u_gen", []) != gen_draw_seeds(core, prf.M_G)):
@@ -828,12 +881,17 @@ def _provider(em, prf, tens, l, lp1_x, pos_x, prover):
                               pos_x=pos_x, t_pad=prf.T_pad, scale=1.0 / np.sqrt(prf.dh))
 
 
-def build(prf, stmt, wit=None, B=CPU, info=None):
+def build(prf, stmt, wit=None, B=CPU, info=None, *, expected_c_pre=None, expected_c_ext=None):
     G_ = __import__("flashprove_next.gadgets", fromlist=["x"])
     """prover: wit = {cap, tensors, store, pre, vol, hs_wit}; verifier: wit None.  Returns (em, ws, hs)."""
     from .fp_ref import rope_table
     info = {} if info is None else info
-    check_statement(prf, stmt)
+    check_statement(
+        prf, stmt,
+        expected_c_pre=expected_c_pre,
+        expected_c_ext=expected_c_ext,
+        require_external_pins=(wit is None),
+    )
     pv = wit is not None
     em = WS.EmHG(emit=True, prove=pv)
     em.B = B
@@ -1475,28 +1533,76 @@ def make_wit(prf, model, cap, com, salts=None, H_cap=None, tokens=None, sys_len=
     return hstmt["R"], wit
 
 
-def prove(prf, stmt, wit, B=CPU):
+_CUDA_ENGINE_CACHE = [None]
+
+
+def _get_folded_cuda_engine():
+    if _CUDA_ENGINE_CACHE[0] is None:
+        from prover.fpn_prover.backend import cuda_engine as CE
+        _CUDA_ENGINE_CACHE[0] = CE.CudaEngine()
+    return _CUDA_ENGINE_CACHE[0]
+
+
+def prove(prf, stmt, wit, B=CPU, *, backend="folded", queries=100, gkr_masks=16, engine=None):
     info = {}
     t0 = time.time()
     em, ws, hs = build(prf, stmt, wit, B, info)
     t1 = time.time()
     em.ctx.cir.pf = None
-    pf = Z.prove(em.ctx.cir, stmt, B, label=LABEL)
     cir = em.ctx.cir
+    if backend == "folded":
+        from prover.fpn_prover.backend import folded_engine as FE
+        eng = engine
+        if eng is None and getattr(B, "name", "cpu") == "cupy":
+            eng = _get_folded_cuda_engine()
+        pf, finfo = FE.prove_folded(
+            cir, stmt, engine=eng, queries=int(queries), gkr_masks=int(gkr_masks),
+            label=LABEL if isinstance(LABEL, bytes) else str(LABEL).encode("ascii"),
+        )
+        info.update(
+            build_s=round(t1 - t0, 3),
+            prove_s=round(time.time() - t1, 3),
+            cells=int(sum(v.N for v in cir.vecs)),
+            phase2_cells=0,
+            cells_by_kind=WS.cells_by_kind(cir),
+            gadget_fails=dict(em.fails),
+            violations=list(em.ctx.notes),
+            slots_used=ws.plan.used,
+            zk_budget={"engine": "fpn2-folded-v1", "queries": int(queries), "gkr_masks": int(gkr_masks),
+                       "phase2_cells": 0, "n_groups": finfo.get("n_groups", 0), "n_group": finfo.get("n_group", 0)},
+            engine="fpn2-folded-v1",
+            folded_info=finfo,
+        )
+        return pf, info
+    if backend != "legacy":
+        raise ValueError(f"unknown reply_zk backend {backend!r} (expected 'folded' or 'legacy')")
+    pf = Z.prove(cir, stmt, B, label=LABEL)
     info.update(build_s=round(t1 - t0, 3), prove_s=round(time.time() - t1, 3), cells=int(sum(v.N for v in cir.vecs)),
                 cells_by_kind=WS.cells_by_kind(cir), gadget_fails=dict(em.fails), violations=list(em.ctx.notes),
-                slots_used=ws.plan.used, zk_budget=dict(Z.ZK_REPORT))
+                slots_used=ws.plan.used, zk_budget=dict(Z.ZK_REPORT), engine="legacy-zk-flat")
     return pf, info
 
 
-def verify(prf, stmt, pf):
-    em, _, _ = build(prf, stmt, None)
+def verify(prf, stmt, pf, *, expected_c_pre=None, expected_c_ext=None, allow_reduced_queries=False):
+    em, _, _ = build(prf, stmt, None, expected_c_pre=expected_c_pre, expected_c_ext=expected_c_ext)
+    if isinstance(pf, dict) and pf.get("version") == "fpn2-folded-v1":
+        from prover.fpn_prover.backend import folded_engine as FE, multi_gkr as MG, multi_pcs as MP
+        min_q = 1 if allow_reduced_queries else FE.MIN_PRODUCTION_QUERIES
+        try:
+            return FE.verify_folded(
+                em.ctx.cir, stmt, pf,
+                label=LABEL if isinstance(LABEL, bytes) else str(LABEL).encode("ascii"),
+                min_queries=min_q,
+            )
+        except (FE.FoldedEngineError, MP.MultiPcsError, MG.MultiGkrError) as e:
+            raise Z.ProofError(str(e)) from None
     return Z.verify(em.ctx.cir, stmt, pf, label=LABEL)
 
 
-def try_verify(prf, stmt, pf):
+def try_verify(prf, stmt, pf, *, expected_c_pre=None, expected_c_ext=None, allow_reduced_queries=False):
     try:
-        verify(prf, stmt, pf)
+        verify(prf, stmt, pf, expected_c_pre=expected_c_pre, expected_c_ext=expected_c_ext,
+               allow_reduced_queries=allow_reduced_queries)
         return "accepted"
     except Z.ProofError as e:
         return "rejected: " + str(e)

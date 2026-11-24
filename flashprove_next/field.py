@@ -266,12 +266,22 @@ class _NumpyBackend:
     @staticmethod
     def add(a, b):
         a = np.asarray(a, dtype=np.uint64); b = np.asarray(b, dtype=np.uint64)
+        if a.size >= 4096 and a.shape == b.shape:
+            lib = native()
+            if lib is not None:
+                a2 = _c(a); b2 = _c(b); out = np.empty(a2.shape, dtype=np.uint64)
+                lib.gl_add(ptr(a2), ptr(b2), ptr(out), a2.size); return out
         r = a + b
         return np.where((r < a) | (r >= _PU), r - _PU, r)
 
     @staticmethod
     def sub(a, b):
         a = np.asarray(a, dtype=np.uint64); b = np.asarray(b, dtype=np.uint64)
+        if a.size >= 4096 and a.shape == b.shape:
+            lib = native()
+            if lib is not None:
+                a2 = _c(a); b2 = _c(b); out = np.empty(a2.shape, dtype=np.uint64)
+                lib.gl_sub(ptr(a2), ptr(b2), ptr(out), a2.size); return out
         return np.where(a >= b, a - b, a + (_PU - b))
 
     @staticmethod
@@ -308,10 +318,30 @@ class _NumpyBackend:
         return np.stack([c0, c1, c2])
 
     @classmethod
-    def eadd(cls, a, b): return np.stack([cls.add(a[0], b[0]), cls.add(a[1], b[1]), cls.add(a[2], b[2])])
+    def eadd(cls, a, b):
+        a = np.asarray(a, dtype=np.uint64); b = np.asarray(b, dtype=np.uint64)
+        if a.shape == b.shape and a.ndim == 2 and a.shape[0] == 3:
+            return cls.add(a, b)            # whole (3, n) block in one pass (limb-wise, identical values)
+        return np.stack([cls.add(a[0], b[0]), cls.add(a[1], b[1]), cls.add(a[2], b[2])])
 
     @classmethod
-    def esub(cls, a, b): return np.stack([cls.sub(a[0], b[0]), cls.sub(a[1], b[1]), cls.sub(a[2], b[2])])
+    def esub(cls, a, b):
+        a = np.asarray(a, dtype=np.uint64); b = np.asarray(b, dtype=np.uint64)
+        if a.shape == b.shape and a.ndim == 2 and a.shape[0] == 3:
+            return cls.sub(a, b)
+        return np.stack([cls.sub(a[0], b[0]), cls.sub(a[1], b[1]), cls.sub(a[2], b[2])])
+
+    @classmethod
+    def efold(cls, col, r):
+        """Multilinear halving of a (3, 2m) column: out[i] = col[2i] + r (col[2i+1] - col[2i])."""
+        col = np.asarray(col, dtype=np.uint64)
+        lib = native()
+        if lib is not None and col.ndim == 2 and col.shape[0] == 3 and col.shape[1] >= 2:
+            col = _c(col); out = np.empty((3, col.shape[1] // 2), dtype=np.uint64)
+            lib.ext_fold(ptr(col), col.shape[1], ptr(_pts([r])), ptr(out)); return out
+        lo, hi = col[:, 0::2], col[:, 1::2]
+        return cls.eadd(lo, cls.emul(cls.esub(hi, lo), np.repeat(np.array(r, dtype=np.uint64).reshape(3, 1),
+                                                                   lo.shape[1], axis=1)))
 
     @classmethod
     def escale(cls, a, c):
@@ -502,6 +532,7 @@ CPU = _NumpyBackend()
 
 # ----------------------------------------------------------------------------- optional native accelerator
 _NATIVE = False
+_NATIVE_VERSION = 7              # == tg_version() in _fast_cpu.cpp
 _HERE = os.path.dirname(os.path.abspath(__file__))
 _SO = os.path.join(_HERE, "_fast_cpu.so")
 
@@ -526,16 +557,39 @@ def native():
         return None
     import ctypes
     src = os.path.join(_HERE, "_fast_cpu.cpp")
+    can_build = os.environ.get("FPN_NO_BUILD") != "1"
     stale = (not os.path.exists(_SO)) or (os.path.exists(src) and os.path.getmtime(src) > os.path.getmtime(_SO))
-    if stale and os.environ.get("FPN_NO_BUILD") != "1":
+    if stale and can_build:
         _try_build()
-    if not os.path.exists(_SO):
-        return None
-    try:
-        lib = ctypes.CDLL(_SO)
-        if lib.tg_version() != 6:
+
+    def load(path):
+        if not os.path.exists(path):
             return None
-    except (OSError, AttributeError):
+        try:
+            h = ctypes.CDLL(path)
+            return h if h.tg_version() == _NATIVE_VERSION else None
+        except (OSError, AttributeError):
+            return None
+
+    lib = load(_SO)
+    if lib is None and can_build and not stale:
+        # A library built for another platform / ABI (e.g. a macOS .so copied to Linux: "invalid ELF header") or an
+        # older version with a newer mtime: rebuild from source once instead of silently using the NumPy fallback.
+        # The rebuilt file is loaded through a private copy (the dynamic loader caches an already-mapped path).
+        if _try_build():
+            import shutil
+            import tempfile
+            fd, tmp = tempfile.mkstemp(suffix=".so")
+            os.close(fd)
+            try:
+                shutil.copyfile(_SO, tmp)
+                lib = load(tmp)
+            finally:
+                try:
+                    os.unlink(tmp)
+                except OSError:
+                    pass
+    if lib is None:
         return None
     u64p = ctypes.POINTER(ctypes.c_uint64); L = ctypes.c_long; U = ctypes.c_uint64
     for nm in ("gl_mul", "gl_add", "gl_sub", "ext_mul"):
@@ -551,8 +605,46 @@ def native():
     lib.fold_coset.argtypes = [u64p, ctypes.c_int, L, L, U, u64p, ctypes.c_int]
     lib.p2_init.argtypes = [u64p, u64p]
     lib.p2_permute.argtypes = [u64p, L, u64p]
+    lib.fpn_set_threads.argtypes = [ctypes.c_int]; lib.fpn_set_threads.restype = ctypes.c_int
+    lib.fpn_set_threads(native_threads())
+    lib.ext_fold.argtypes = [u64p, L, u64p, u64p]
+    lib.ext_scale.argtypes = [u64p, L, u64p, u64p]
+    lib.gkr_round.argtypes = [u64p, u64p, u64p, u64p, u64p, L, u64p, u64p]
     _NATIVE = lib
     return lib
+
+
+def effective_cpus():
+    """CPUs this process may actually use: the scheduler affinity mask, capped by a cgroup CPU quota (containers often
+    expose every host core in /proc while throttling to a fraction of them)."""
+    try:
+        n = len(os.sched_getaffinity(0))
+    except (AttributeError, OSError):
+        n = os.cpu_count() or 1
+    for path in ("/sys/fs/cgroup/cpu.max", "/sys/fs/cgroup/cpu/cpu.cfs_quota_us"):
+        try:
+            with open(path) as f:
+                parts = f.read().split()
+            if path.endswith("cpu.max"):
+                quota, period = parts[0], parts[1]
+            else:
+                quota = parts[0]
+                with open("/sys/fs/cgroup/cpu/cpu.cfs_period_us") as f:
+                    period = f.read().split()[0]
+            if quota not in ("max", "-1"):
+                n = min(n, max(1, int(quota) // int(period)))
+            break
+        except (OSError, ValueError, IndexError):
+            continue
+    return n
+
+
+def native_threads():
+    """OpenMP team size of the native library: $FPN_NATIVE_THREADS, else min(16, effective CPUs)."""
+    env = os.environ.get("FPN_NATIVE_THREADS")
+    if env:
+        return max(1, int(env))
+    return max(1, min(16, effective_cpus()))
 
 
 def ptr(a):

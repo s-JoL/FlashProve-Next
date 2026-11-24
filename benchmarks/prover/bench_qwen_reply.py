@@ -98,21 +98,31 @@ def qwen_rope_fn(dh, rope_theta):
     return _qwen_rope_fn(int(dh), float(rope_theta))
 
 
-def make_qwen_profile(cfg, vec_pad, t_pad, m_c, m_g, sys_cap=32):
-    from flashprove_next import modelcommit as MC, reply_zk as RZ, sampling_v3 as S3
+def _select_mc_params(cfg):
+    from flashprove_next import modelcommit as MC
+    d = int(cfg["hidden_size"])
+    n_layers = int(cfg.get("num_hidden_layers", 32))
+    return MC.QWEN4B_PARAMS_R if (d >= 2048 or n_layers > 32) else MC.QWEN_PARAMS_R
+
+
+def make_qwen_profile(cfg, vec_pad, t_pad, m_c, m_g, sys_cap=32, prm=None):
+    from flashprove_next import reply_zk as RZ, sampling_v3 as S3
     d = int(cfg["hidden_size"])
     dff = int(cfg["intermediate_size"])
     n_q = int(cfg["num_attention_heads"])
     n_kv = int(cfg["num_key_value_heads"])
     dh = int(cfg.get("head_dim") or d // n_q)
     V = int(cfg["vocab_size"])
+    n_layers = int(cfg.get("num_hidden_layers", 32))
+    l_max = 64 if n_layers > 32 else 32
+    prm = _select_mc_params(cfg) if prm is None else prm
     eps_bits = int(np.array([cfg["rms_norm_eps"]], dtype=np.float32).view(np.uint32)[0])
     rope_theta = float(cfg["rope_theta"])
     rule = S3.Rule(0.6, 0.95, 32)
     return RZ.Profile(
         d=d, n_q=n_q, n_kv=n_kv, dh=dh, dff=dff,
-        L_MAX=32, T_pad=int(t_pad), M_C=int(m_c), M_G=int(m_g),
-        prm=MC.QWEN_PARAMS_R, MQ_H=268, s_bits=1, SYS_CAP=int(sys_cap),
+        L_MAX=l_max, T_pad=int(t_pad), M_C=int(m_c), M_G=int(m_g),
+        prm=prm, MQ_H=268, s_bits=1, SYS_CAP=int(sys_cap),
         VEC_PAD=int(vec_pad), QN_CAP=12.0, KN_CAP=1100.0, EXP_BITS=17,
         attention=True, V=V, HIST_CAP=max(16, int(t_pad)), rule=rule,
         rope_fn=qwen_rope_fn(dh, rope_theta), eps_bits=eps_bits,
@@ -388,7 +398,7 @@ def cmd_capture(a):
 
 # ============================================================================ 2. commit (cupy venv)
 def cmd_commit(a):
-    from flashprove_next import mc_zk as MZ, modelcommit as MC, reply_zk as RZ
+    from flashprove_next import mc_zk as MZ, modelcommit as MC, reply_zk as RZ, sampling_v3 as S3
     from flashprove_next.field import gpu_backend
 
     B = gpu_backend()
@@ -396,8 +406,8 @@ def cmd_commit(a):
     cap_npz = np.load(a.cap)
     cap_meta = json.loads(bytes(cap_npz["meta"]).decode())
     ck = MC.Checkpoint(a.model)
-    lazy_t = RZ.LazyCommitTensors(ck, MC.QWEN_PARAMS_R.TI)
-    prm = MC.QWEN_PARAMS_R
+    prm = _select_mc_params(ck.config)
+    lazy_t = RZ.LazyCommitTensors(ck, prm.TI)
     lay = MC.Layout(lazy_t.shapes(), prm, radius=True, cfg_rows=True)
     assert lay.n_vec_rows == 1, f"expected 1 vec row, got {lay.n_vec_rows}"
     vec_pad = 1 << max(1, (lay.vec_len - 1).bit_length())
@@ -451,7 +461,7 @@ def cmd_commit(a):
     pre, mid = MZ.model_preimage(w_root, c_cfg=ccfg)
 
     setup_meta = {
-        "model": "Qwen3-0.6B",
+        "model": os.path.basename(os.path.normpath(a.model)),
         "machine": describe_machine(),
         "prm": asdict(prm),
         "vec_pad": vec_pad,
@@ -489,7 +499,8 @@ def cmd_prove(a):
 
     stop_nvml = _start_nvml_poller(1.0)
     ck = MC.Checkpoint(a.model)
-    lazy_t = RZ.LazyCommitTensors(ck, MC.QWEN_PARAMS_R.TI)
+    mc_prm = _select_mc_params(ck.config)
+    lazy_t = RZ.LazyCommitTensors(ck, mc_prm.TI)
     setup_meta = json.load(open(os.path.join(a.store, "setup_meta.json")))
     cap_d = np.load(a.cap)
     cap_meta = json.loads(bytes(cap_d["meta"]).decode())
@@ -502,10 +513,10 @@ def cmd_prove(a):
     )
 
     prf = make_qwen_profile(
-        ck.config, setup_meta["vec_pad"], cap_meta["t_pad"], a.m_c, a.m_g, sys_cap=cap_meta["sys_cap"]
+        ck.config, setup_meta["vec_pad"], cap_meta["t_pad"], a.m_c, a.m_g, sys_cap=cap_meta["sys_cap"], prm=mc_prm
     )
-    lay = MC.Layout(lazy_t.shapes(), prm=MC.QWEN_PARAMS_R, radius=True, cfg_rows=True)
-    store = MC.Store(a.store, MC.QWEN_PARAMS_R, tag="W")
+    lay = MC.Layout(lazy_t.shapes(), prm=mc_prm, radius=True, cfg_rows=True)
+    store = MC.Store(a.store, mc_prm, tag="W")
     com = {
         "layout": lay,
         "store": store,
@@ -532,7 +543,12 @@ def cmd_prove(a):
         prf, com, api, list(cap_meta["cot_tokens"]), NONCE_C, NONCE_S, STATE_R
     )
     wit["st"] = stw
-    stmt = RZ.statement(prf, com, R_root, api, stp)
+    c_ext_bytes = None
+    if a.challenge_mode == "external_seed":
+        c_ext_bytes = bytes.fromhex(a.c_ext_hex)
+    stmt = RZ.statement(prf, com, R_root, api, stp, c_ext=c_ext_bytes)
+    expected_c_pre_hex = stmt.get("c_pre")
+    expected_c_ext_hex = stmt.get("c_ext")
 
     Z.MEM_REPORT.clear()
     Z.STREAM_STATS.clear()
@@ -540,9 +556,22 @@ def cmd_prove(a):
     gc.collect()
 
     with Z.PoolPeak() as pk:
-        pf, info = RZ.prove(prf, stmt, wit, B=B)
+        pf, info = RZ.prove(
+            prf, stmt, wit, B=B, backend=a.backend,
+            queries=int(a.queries), gkr_masks=int(a.gkr_masks),
+        )
 
-    blob = dumps(pf)
+    from flashprove_next import reply_bundle as RB
+    spec = RB.profile_spec_from_hf_config(
+        ck.config,
+        name=f"{os.path.basename(os.path.normpath(a.model)).lower()}-bench",
+        vec_pad=setup_meta["vec_pad"], t_pad=cap_meta["t_pad"],
+        m_c=int(a.m_c), m_g=int(a.m_g), sys_cap=cap_meta["sys_cap"],
+    )
+    if a.backend == "folded":
+        blob = RB.pack_bundle(spec, stmt, pf, pad_to_bytes=int(a.pad_to_bytes), format="v2")
+    else:
+        blob = dumps(pf)
     rss_gib, hwm_gib = _vm_gib()
     nvml_peak_gib = stop_nvml()
     pool_peak_gib = round(pk.peak / (1 << 30), 3)
@@ -551,16 +580,28 @@ def cmd_prove(a):
     with open(os.path.join(a.out_dir, "proof.bin"), "wb") as f:
         f.write(blob)
     with open(os.path.join(a.out_dir, "stmt.json"), "w") as f:
-        json.dump({"stmt": stmt, "profile": {
-            "vec_pad": setup_meta["vec_pad"], "t_pad": cap_meta["t_pad"],
-            "m_c": int(a.m_c), "m_g": int(a.m_g), "sys_cap": cap_meta["sys_cap"],
-            "config": ck.config,
-        }}, f)
+        json.dump({
+            "stmt": stmt,
+            "backend": a.backend,
+            "challenge_mode": a.challenge_mode,
+            "expected_c_pre": expected_c_pre_hex,
+            "expected_c_ext": expected_c_ext_hex,
+            "profile": {
+                "vec_pad": setup_meta["vec_pad"], "t_pad": cap_meta["t_pad"],
+                "m_c": int(a.m_c), "m_g": int(a.m_g), "sys_cap": cap_meta["sys_cap"],
+                "config": ck.config,
+            },
+        }, f)
 
+    folded_info = info.get("folded_info") or {}
     metrics = {
-        "model": "Qwen3-0.6B",
+        "model": os.path.basename(os.path.normpath(a.model)),
         "machine": describe_machine(),
         "version": RZ.VERSION,
+        "engine": info.get("engine", a.backend),
+        "challenge_mode": a.challenge_mode,
+        "queries": int(a.queries) if a.backend == "folded" else 168,
+        "gkr_masks": int(a.gkr_masks) if a.backend == "folded" else 0,
         "M_C": int(a.m_c),
         "M_G": int(a.m_g),
         "total_draws": int(a.m_c) + int(a.m_g),
@@ -581,11 +622,15 @@ def cmd_prove(a):
         "prove_s": info["prove_s"],
         "total_prover_gpu_s": round(commit_h_s + info["build_s"] + info["prove_s"], 3),
         "cells": info["cells"],
+        "phase2_cells": int(info.get("phase2_cells", 0)),
         "cells_by_kind": info["cells_by_kind"],
         "slots_used": info["slots_used"],
         "claim_slots_J": prf.claim_slots,
         "hsel_slots_J": prf.J,
-        "proof_bytes": len(blob),
+        "proof_bytes": int(folded_info.get("proof_bytes", len(blob))),
+        "container_bytes": len(blob),
+        "expected_c_pre": expected_c_pre_hex,
+        "expected_c_ext": expected_c_ext_hex,
         "gadget_fails": info["gadget_fails"],
         "violations": info["violations"],
         "zk_budget": info["zk_budget"],
@@ -604,7 +649,7 @@ def cmd_prove(a):
 
 # ============================================================================ 4. verify (CPU-only process)
 def cmd_verify(a):
-    from flashprove_next import reply_zk as RZ
+    from flashprove_next import reply_bundle as RB, reply_zk as RZ
     from flashprove_next.transcript import loads
 
     assert os.environ.get("CUDA_VISIBLE_DEVICES", None) == "", \
@@ -617,9 +662,15 @@ def cmd_verify(a):
     )
     with open(os.path.join(a.out_dir, "proof.bin"), "rb") as f:
         blob = f.read()
-    pf = loads(blob)
+    if RB.is_reply_zk_blob(blob):
+        exp_sz = RB.FPNZK2_FIXED_SIZE_DEFAULT if blob.startswith(RB.HEADER_PREFIX_V2) else None
+        pf = RB.unpack_bundle(blob, expected_container_bytes=exp_sz)["pf"]
+    else:
+        pf = loads(blob)
+    exp_c_pre = bytes.fromhex(bundle["expected_c_pre"]) if bundle.get("expected_c_pre") else None
+    exp_c_ext = bytes.fromhex(bundle["expected_c_ext"]) if bundle.get("expected_c_ext") else None
     t0 = time.perf_counter()
-    verdict = RZ.try_verify(prf, stmt, pf)
+    verdict = RZ.try_verify(prf, stmt, pf, expected_c_pre=exp_c_pre, expected_c_ext=exp_c_ext)
     verify_s = round(time.perf_counter() - t0, 3)
     rss_gib, hwm_gib = _vm_gib()
 
@@ -636,7 +687,7 @@ def cmd_verify(a):
             json.dump(metrics, f, indent=1, ensure_ascii=False)
     print(json.dumps({
         "phase": "verify", "verdict": verdict, "verify_cpu_s": verify_s,
-        "verify_max_rss_gib": hwm_gib, "proof_bytes": len(blob),
+        "verify_max_rss_gib": hwm_gib, "container_bytes": len(blob),
     }), flush=True)
     if verdict != "accepted":
         raise SystemExit(1)
@@ -665,8 +716,14 @@ def main(argv=None):
     p_prv.add_argument("--cap", required=True)
     p_prv.add_argument("--store", required=True)
     p_prv.add_argument("--out-dir", required=True)
-    p_prv.add_argument("--m-c", type=int, default=210)
-    p_prv.add_argument("--m-g", type=int, default=105)
+    p_prv.add_argument("--m-c", type=int, default=102)
+    p_prv.add_argument("--m-g", type=int, default=51)
+    p_prv.add_argument("--backend", choices=("folded", "legacy"), default="folded")
+    p_prv.add_argument("--challenge-mode", choices=("external_seed", "ni"), default="external_seed")
+    p_prv.add_argument("--c-ext-hex", default="20261124" * 8)
+    p_prv.add_argument("--queries", type=int, default=100)
+    p_prv.add_argument("--gkr-masks", type=int, default=16)
+    p_prv.add_argument("--pad-to-bytes", type=int, default=8 * 1024 * 1024)
 
     p_ver = sub.add_parser("verify")
     p_ver.add_argument("--out-dir", required=True)

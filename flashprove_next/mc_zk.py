@@ -101,7 +101,6 @@ class Shape:
         self.XB = max(self.IB, self.JB)                 # LogUp helper bits per half
         self.QB = _lg(prm.MQ)
         self.KB = prm.nc.bit_length() - 1
-        assert self.QB + self.IB <= self.KB, "column block must embed into the u cube"
         assert self.JB <= self.KB, "claim slots must embed into the u cube"
         self.A = prm.R_MAX // 8                         # absorb rows per column leaf
         self.depth = prm.depth
@@ -161,8 +160,8 @@ class EVec(Z.Pub):
 class GQ(Z.Pub):
     """g_k = sum_q beta_q w^{j_q k}, k < n_c (w = n-th root): <u, g> = sum_q beta_q RS(u)[j_q].  MLE in O(m_q log n_c)."""
 
-    def __init__(self, prm, Q, beta, varmap):
-        super().__init__(varmap, ())
+    def __init__(self, prm, Q, beta, varmap, fixed=()):
+        super().__init__(varmap, fixed)
         self.prm, self.Q, self.beta = prm, [int(j) for j in Q], [tuple(int(x) % P for x in b) for b in beta]
         assert len(self.varmap) == prm.nc.bit_length() - 1
         d = hashlib.blake2b(json.dumps([self.Q, self.beta]).encode(), digest_size=12).hexdigest()
@@ -748,16 +747,26 @@ def build(prm, stmt, wit=None, B=CPU, info=None, ctx=None, ext=None, cfg_ext=Non
     # ------------------------------------------------------------------ beta -> batched column check
     def round_c(tr):
         beta = tr.exts(prm.MQ)
-        US = S["US"]
-        kv = US.vars("k")
         bq = np.zeros((3, 1 << QB), dtype=np.uint64)
         for q, b in enumerate(beta):
             bq[0, q], bq[1, q], bq[2, q] = b
-        bq_us = Ex.atom(EVec("beta", bq, kv[IB:IB + QB], fixed=tuple((v, 0) for v in kv[IB + QB:])))
-        gq = Ex.atom(GQ(prm, S["Q"], beta, kv))
-        a_us = view(S["al"], US, {"i": [("k", s) for s in range(IB)]})
-        m_us = view(S["M"], US, {"q": [("k", IB + s) for s in range(QB)], "i": [("k", s) for s in range(IB)]})
-        US.sumzero(S["u"].ex * gq - a_us * bq_us * m_us, tag="mc.colcheck")
+        if QB + IB <= KB:
+            US = S["US"]
+            kv = US.vars("k")
+            bq_us = Ex.atom(EVec("beta", bq, kv[IB:IB + QB], fixed=tuple((v, 0) for v in kv[IB + QB:])))
+            gq = Ex.atom(GQ(prm, S["Q"], beta, kv))
+            a_us = view(S["al"], US, {"i": [("k", s) for s in range(IB)]})
+            m_us = view(S["M"], US, {"q": [("k", IB + s) for s in range(QB)], "i": [("k", s) for s in range(IB)]})
+            US.sumzero(S["u"].ex * gq - a_us * bq_us * m_us, tag="mc.colcheck")
+        else:
+            CC = ctx.space("mcCC", [("k", QB + IB)])
+            kv = CC.vars("k")
+            u_cc = view(S["u"], CC, {"k": [("k", s) for s in range(KB)]})
+            gq_cc = Ex.atom(GQ(prm, S["Q"], beta, kv[:KB], fixed=tuple((v, 0) for v in kv[KB:])))
+            bq_cc = Ex.atom(EVec("beta", bq, kv[IB:IB + QB]))
+            a_cc = view(S["al"], CC, {"i": [("k", s) for s in range(IB)]})
+            m_cc = view(S["M"], CC, {"q": [("k", IB + s) for s in range(QB)], "i": [("k", s) for s in range(IB)]})
+            CC.sumzero(u_cc * gq_cc - a_cc * bq_cc * m_cc, tag="mc.colcheck")
 
     cir.rounds = (list(ext.rounds) if ext is not None else []) + [round_a, round_b, round_c]
     return ctx

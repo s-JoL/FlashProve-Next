@@ -1,0 +1,118 @@
+{
+ "bench": "v1_cheating_matrix",
+ "model": "Qwen3-0.6B",
+ "machine": "NVIDIA RTX 6000D (83.0 GiB) + INTEL(R) XEON(R) PLATINUM 8568Y+ (192 threads, 1007.5 GiB RAM)",
+ "M_C": 8,
+ "M_G": 4,
+ "queries": 100,
+ "gkr_masks": 16,
+ "all_pass": true,
+ "n_cases": 14,
+ "n_honest": 1,
+ "n_negative": 13,
+ "n_pass": 14,
+ "cases": [
+  {
+   "case": "1_honest_extseed_fpnzk2",
+   "expected": "ACCEPT",
+   "verdict": "accepted",
+   "pass": true,
+   "prove_s": 93.105,
+   "verify_s": 5.495,
+   "cells": 127535784,
+   "phase2_cells": 0,
+   "container_bytes": 8388608,
+   "body_bytes": 3630194
+  },
+  {
+   "case": "2_real_perturbed_weights_model",
+   "expected": "REJECT",
+   "verdict": "rejected: E_SUMCHECK: sumcheck round mismatch (cube 2^6)",
+   "pass": true,
+   "prove_s": 88.516,
+   "verify_s": 3.72,
+   "altered_linear_tensors": 196
+  },
+  {
+   "case": "3_real_int4_quantized_model",
+   "expected": "REJECT",
+   "verdict": "rejected: E_SUMCHECK: sumcheck round mismatch (cube 2^13)",
+   "pass": true,
+   "prove_s": 81.44,
+   "verify_s": 3.203,
+   "quantized_linear_tensors": 196
+  },
+  {
+   "case": "4_skipped_layers",
+   "expected": "REJECT",
+   "verdict": "rejected: E_SUMCHECK: sumcheck round mismatch (cube 2^6)",
+   "pass": true,
+   "prove_s": 92.742,
+   "verify_s": 4.801
+  },
+  {
+   "case": "5_truncated_kv_context",
+   "expected": "REJECT",
+   "verdict": "rejected: E_SUMCHECK: sumcheck round mismatch (cube 2^8)",
+   "pass": true,
+   "prove_s": 90.92,
+   "verify_s": 4.669
+  },
+  {
+   "case": "6_tampered_hidden_sys_prompt",
+   "expected": "REJECT",
+   "verdict": "rejected: E_SUMCHECK: sumcheck round mismatch (cube 2^9)",
+   "pass": true,
+   "prove_s": 90.715,
+   "verify_s": 3.102
+  },
+  {
+   "case": "7_tampered_visible_reply",
+   "expected": "REJECT",
+   "verdict": "rejected: E_CPRE_MISMATCH: statement c_pre does not match committed base core",
+   "pass": true
+  },
+  {
+   "case": "8_replay_tampered_st_prev",
+   "expected": "REJECT",
+   "verdict": "rejected: E_CPRE_MISMATCH: statement c_pre does not match committed base core",
+   "pass": true
+  },
+  {
+   "case": "9a_missing_cpre_pin",
+   "expected": "REJECT",
+   "verdict": "rejected: E_CPRE_UNPINNED: external_seed verification requires pre-recorded expected_c_pre and expected_c_ext",
+   "pass": true
+  },
+  {
+   "case": "9b_swapped_cpre_pin",
+   "expected": "REJECT",
+   "verdict": "rejected: E_CPRE_MISMATCH: statement c_pre differs from pre-recorded commitment",
+   "pass": true
+  },
+  {
+   "case": "9c_swapped_cext_pin",
+   "expected": "REJECT",
+   "verdict": "rejected: E_CEXT_MISMATCH: statement c_ext differs from released external seed",
+   "pass": true
+  },
+  {
+   "case": "9d_fpnzk2_nonzero_padding",
+   "expected": "REJECT",
+   "verdict": "rejected: E_PADDING: non-zero byte in FPNZK2 tail padding",
+   "pass": true
+  },
+  {
+   "case": "9e_downgraded_queries_4",
+   "expected": "REJECT",
+   "verdict": "rejected: E_REDUCED_SECURITY: queries=4 < min_queries=72",
+   "pass": true
+  },
+  {
+   "case": "9f_fpnzk2_wrong_envelope_size",
+   "expected": "REJECT",
+   "verdict": "rejected: E_LENGTH: FPNZK2 envelope size 4194304 != trusted profile size 8388608",
+   "pass": true
+  }
+ ]
+}

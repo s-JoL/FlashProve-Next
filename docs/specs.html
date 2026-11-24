@@ -3,10 +3,10 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Protocol Specifications (01–10) — FlashProve-Next</title>
-  <meta name="description" content="Complete protocol specifications (Specs 01–10) for FlashProve-Next: verifiable zero-knowledge inference for closed-weight production LLM APIs." />
-  <meta property="og:title" content="Protocol Specifications (01–10) — FlashProve-Next" />
-  <meta property="og:description" content="Complete protocol specifications (Specs 01–10) for FlashProve-Next: soundness, zero knowledge, certified FP rounding, model commitment, and trace commitment." />
+  <title>Protocol Specifications (01–11) — FlashProve-Next</title>
+  <meta name="description" content="Complete protocol and wire-format specifications (Specs 01–11) for FlashProve-Next: verifiable inference for closed-weight native-FP LLM APIs." />
+  <meta property="og:title" content="Protocol Specifications (01–11) — FlashProve-Next" />
+  <meta property="og:description" content="Complete protocol and wire-format specifications (Specs 01–11) for FlashProve-Next: soundness, zero knowledge, certified FP rounding, model commitment, trace commitment, and FPN2 binary wire format." />
   <meta property="og:type" content="website" />
   <meta property="og:url" content="https://s-jol.github.io/FlashProve-Next/specs.html" />
   <style>
@@ -122,12 +122,12 @@
 
   <main class="container">
     <h1>
-      <span class="en">Protocol Specifications (<code>specs/01–10</code>)</span>
-      <span class="zh">协议与安全规范（<code>specs/01–10</code>）</span>
+      <span class="en">Protocol &amp; Wire Specifications (<code>specs/01–11</code>)</span>
+      <span class="zh">协议与线格式规范（<code>specs/01–11</code>）</span>
     </h1>
     <p class="lead">
-      <span class="en">Ten self-contained specifications defining the relation, security proofs, serving semantics, and commitment schemes. For the unified English paper, see <a href="paper/FlashProve-Next.pdf">FlashProve-Next.pdf</a>.</span>
-      <span class="zh">10 份独立规范，分别定义证明陈述、安全性定理、线上推理兼容语义与承诺构造。英文完整综合论述见论文 <a href="paper/FlashProve-Next.pdf">FlashProve-Next.pdf</a>。</span>
+      <span class="en">Eleven self-contained specifications defining the relation, security proofs, serving semantics, commitment schemes, and the <code>FPN2</code> binary container format. For the unified technical report, see <a href="paper/FlashProve-Next.pdf">FlashProve-Next.pdf</a>.</span>
+      <span class="zh">11 份独立规范，覆盖证明陈述、安全性证明、线上推理语义、承诺构造与 <code>FPN2</code> 二进制容器线格式。英文完整论文见 <a href="paper/FlashProve-Next.pdf">FlashProve-Next.pdf</a>。</span>
     </p>
 
     <div class="spec-grid">
@@ -189,7 +189,7 @@
         <div>
           <div class="card-num">SPEC 07 · ASSUMPTIONS &amp; LEAN</div>
           <h3><span class="en">Assumptions, Dependency Graph &amp; Lean Map</span><span class="zh">全部前提假设、依赖关系图与 Lean 对应表</span></h3>
-          <p><span class="en">Lists all 30 cryptographic, numerical, engineering, and scope assumptions with a full dependency graph, showing soundness depends only on cryptographic assumptions and protocol obligations (never on kernel rounding contracts) and mapping all 19 Lean modules.</span><span class="zh">完整列出 30 项密码学、数值、工程与边界前提及其依赖图，证明防伪造只依赖密码学假设与协议实现义务（与算子数值合约无关），并逐项对应 19 个 Lean 模块。</span></p>
+          <p><span class="en">Lists cryptographic, numerical, engineering, and scope assumptions with a full dependency graph, showing soundness depends only on cryptographic premises and protocol obligations alongside the 28-module Lean 4 inventory.</span><span class="zh">列出全部密码学、数值、工程与边界前提及其依赖图，说明防伪造仅依赖密码学假设与协议实现义务，并给出 28 个 Lean 4 模块清单。</span></p>
         </div>
         <a class="file-link" target="_blank" rel="noopener" href="https://github.com/s-JoL/FlashProve-Next/blob/main/specs/07-assumptions-and-lean.md">specs/07-assumptions-and-lean.md →</a>
       </div>
@@ -219,6 +219,15 @@
           <p><span class="en">Replaces expensive per-key Merkle openings in long-context attention with a per-request matrix commitment, fixed-point lift, hidden-selection sumcheck, and power-of-two length tiers.</span><span class="zh">解决长上下文注意力逐键哈希带来的电路膨胀：通过每请求 KV 矩阵承诺、定点提升、隐藏选择归约与 2 的幂公开长度档位将规模压回单机可跑范围。</span></p>
         </div>
         <a class="file-link" target="_blank" rel="noopener" href="https://github.com/s-JoL/FlashProve-Next/blob/main/specs/10-trace-commitment.md">specs/10-trace-commitment.md →</a>
+      </div>
+
+      <div class="card">
+        <div>
+          <div class="card-num">SPEC 11 · WIRE FORMAT</div>
+          <h3><span class="en"><code>FPN2</code> Fixed-Size Binary Wire Format</span><span class="zh"><code>FPN2</code> 定长二进制容器线格式</span></h3>
+          <p><span class="en">Normative binary container layout, BLAKE2b-512 transcript schedule, registered profiles, Relations 1–6 (folded GKR/AIR/vec/vec-bound/LLM), reject codes, and golden test vectors implemented identically in Rust, detached Python, and Lean 4.</span><span class="zh">定义定长零填充二进制容器、BLAKE2b-512 原始字节转录、配置档注册表、关系 1–6、规范拒绝码与黄金测试向量，由 Rust、脱钩 Python 与 Lean 4 逐字节互通实现。</span></p>
+        </div>
+        <a class="file-link" target="_blank" rel="noopener" href="https://github.com/s-JoL/FlashProve-Next/blob/main/specs/11-wire-format.md">specs/11-wire-format.md →</a>
       </div>
     </div>
   </main>

@@ -44,6 +44,10 @@ def build_parser():
                     help="tokenizer directory or tokenizer.json (chat rendering and constrained decoding)")
     ap.add_argument("--extra-profile", action="append", default=None, metavar="SPEC.json",
                     help="register an additional verifier-chosen profile spec (repeatable)")
+    ap.add_argument("--c-pre", default=None,
+                    help="pre-recorded 64-hex C_pre commitment (required for external_seed reply proofs)")
+    ap.add_argument("--c-ext", default=None,
+                    help="pre-recorded 64-hex external challenge seed c_ext (required for external_seed reply proofs)")
     ap.add_argument("--json", action="store_true", help="also print a JSON result line")
     return ap
 
@@ -57,6 +61,12 @@ def main(argv=None):
         if len(mid) != 32:
             raise ValueError("model_id must be 32 bytes")
         bytes.fromhex(a.nonce)
+        c_pre = bytes.fromhex(a.c_pre) if a.c_pre is not None else None
+        if c_pre is not None and len(c_pre) != 32:
+            raise ValueError("c_pre must be 32 bytes")
+        c_ext = bytes.fromhex(a.c_ext) if a.c_ext is not None else None
+        if c_ext is not None and len(c_ext) != 32:
+            raise ValueError("c_ext must be 32 bytes")
         req = _load_json(a.request)
         rep = _load_json(a.reply)
         with open(a.proof, "rb") as f:
@@ -68,7 +78,7 @@ def main(argv=None):
         return 1
 
     if not RB.is_reply_zk_blob(proof):
-        ok, why, info = False, "not an FPNZK1 proof bundle", {}
+        ok, why, info = False, "not an FPNZK1/FPNZK2 proof bundle", {}
     else:
         tok = os.path.expanduser(a.tokenizer) if a.tokenizer else None
         ok, why, info = RB.verify_cli(
@@ -76,6 +86,8 @@ def main(argv=None):
             allowed_profiles=a.profile,
             tokenizer_dir=tok,
             allow_reduced_security=bool(a.allow_reduced_security),
+            expected_c_pre=c_pre,
+            expected_c_ext=c_ext,
         )
     if a.json:
         print(json.dumps({"ok": ok, "reason": why, **info}))

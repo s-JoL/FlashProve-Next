@@ -1174,31 +1174,34 @@ def add_pos(em, a, b, tag, mb=20):
 
 def rsqrt_enc(em, Pl, Ph, eP, d, tag):
     """t* = sqrt(d / P), P in [Pl, Ph] 2^eP, 2^19 <= Pl <= Ph <= 2^21 + 2: integers T, et with
-    T 2^et <= t* < (T + 8) 2^et.  Witness par in {0,1} with 2 et + eP + 48 + par = 0 and
-        T^2 Ph <= d 2^(48+par) < (T + 8)^2 Pl.
+    T 2^et <= t* < (T + 8) 2^et.  With K0 = 48 - max(0, ceil(log2 d) - 10) so d 2^K0 <= 2^58,
+    witness par in {0,1} with 2 et + eP + K0 + par = 0 and
+        T^2 Ph <= d 2^(K0+par) < (T + 8)^2 Pl.
     Field safety: T < 2^21, T^2 < 2^41 (range), so both products stay below 2^41 (2^21 + 2) < 2^62.1 < p/2."""
     sp = Pl.sp
-    assert d <= (1 << 10)
+    d_shift = max(0, (int(d) - 1).bit_length() - 10)
+    assert d_shift <= 20, f"unsupported RMSNorm dimension d={d}"
+    K0 = EPS_LOG2_FIX - d_shift
     em.rng(em.lin([(1, Pl)], -(1 << 19)), 22, tag + ".plo")          # Rng: P mantissa normalised
     T = et = par = None
     if em.pv:
         T = np.zeros(sp.n, dtype=np.int64); par = np.zeros(sp.n, dtype=np.int64); et = np.zeros(sp.n, dtype=np.int64)
         for i in range(sp.n):
-            eP_ = int(eP.v[i]); par_ = (eP_ + EPS_LOG2_FIX) & 1
-            K = EPS_LOG2_FIX + par_
+            eP_ = int(eP.v[i]); par_ = (eP_ + K0) & 1
+            K = K0 + par_
             ph = max(1, int(Ph.v[i]))
             T_ = math.isqrt((d << K) // ph)
             while T_ * T_ * ph > (d << K):
                 T_ -= 1
-            T[i], par[i], et[i] = T_, par_, -(eP_ + EPS_LOG2_FIX + par_) // 2
+            T[i], par[i], et[i] = T_, par_, -(eP_ + K0 + par_) // 2
     Tx = em.col(sp, tag + ".T", T, 21)
     em.rng(Tx, 21, tag + ".T")
     Px = em.col(sp, tag + ".par", par, 1)
     em.boolean(Px, tag + ".par")
     Et = em.col(sp, tag + ".et", et, 10)
     em.srng(Et, 10, tag + ".et")
-    em.zero(sp, lambda: Ex.const(2) * Et.ex + eP.ex + Ex.const(EPS_LOG2_FIX) + Px.ex, tag + ".etdef")
-    rhs = em.lin([((d << EPS_LOG2_FIX), Px)], d << EPS_LOG2_FIX, bits=60)     # d 2^48 (1 + par) <= 2^59
+    em.zero(sp, lambda: Ex.const(2) * Et.ex + eP.ex + Ex.const(K0) + Px.ex, tag + ".etdef")
+    rhs = em.lin([((d << K0), Px)], d << K0, bits=60)                # d 2^K0 (1 + par) <= 2^59
     T2 = mul(em, Tx, Tx, tag + ".T2", bits=41)
     em.rng(T2, 41, tag + ".T2")
     lhs = mul(em, T2, Ph, tag + ".lhs", bits=63, p_half_ok=True)

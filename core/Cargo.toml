@@ -1,0 +1,23 @@
+[package]
+name = "fpn-core"
+version = "0.1.0"
+edition = "2021"
+license = "Apache-2.0"
+description = "FlashProve-Next core: Goldilocks/F_p^3, Poseidon2, BLAKE2b, FPN2 wire format and verifier (zero dependencies)"
+publish = false
+
+[lib]
+name = "fpn_core"
+path = "src/lib.rs"
+
+[[bin]]
+name = "fpn-verify"
+path = "src/bin/fpn_verify.rs"
+
+# Intentionally empty: fpn-core has zero third-party dependencies (including dev-dependencies).
+[dependencies]
+
+[dev-dependencies]
+
+[profile.release]
+overflow-checks = true

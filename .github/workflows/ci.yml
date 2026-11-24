@@ -19,12 +19,14 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - name: Verify Lean tag resolution and PDF sync
+      - name: Verify Lean tags, Markdown links, Lean module/declaration counts and PDF sync
         run: python3 scripts/check_docs_and_tags.py
       - name: Install tectonic
         uses: wtfjoke/setup-tectonic@v3
       - name: Build LaTeX & PDF with zero warnings
+        shell: bash
         run: |
+          set -euo pipefail
           python3 paper/md2tex.py paper/flashprove-next.md "$RUNNER_TEMP/paper_build.tex"
           tectonic "$RUNNER_TEMP/paper_build.tex" 2>&1 | tee "$RUNNER_TEMP/tectonic.log"
           if grep -E "(^warning:|^error:)" "$RUNNER_TEMP/tectonic.log"; then
@@ -48,13 +50,81 @@ jobs:
           pip install -e ".[tokenizers]"
       - name: Build C++ Goldilocks CPU accelerator
         run: python -m flashprove_next.build_ext
-      - name: Run CPU verification & white-box forgery unit tests
+      - name: Run fast CPU bundle, policy & builder constraint checks (FPN_CI_FAST=1)
         env:
           FPN_CI_FAST: "1"
           FPN_OOC: "1"
         run: python -m tests.test_fast_cpu
       - name: Verify bundled Qwen3-0.6B proof artifacts on CPU
         run: python demo/run_demo.py
+
+  fpn2-verifiers-and-boundaries:
+    name: FPN2 Rust Core, Detached Python Verifier & Audits
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      CUDA_VISIBLE_DEVICES: ""
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install numpy for backend/prover tests
+        run: python -m pip install --upgrade pip && pip install numpy
+      - name: Build & test zero-dep Rust fpn-core (release + clippy)
+        run: |
+          cargo clippy --manifest-path core/Cargo.toml --all-targets -- -D warnings
+          cargo test --manifest-path core/Cargo.toml --release
+          cargo build --manifest-path core/Cargo.toml --release
+      - name: Test detached Python reference verifier (zero prover imports, -W error)
+        run: PYTHONPATH=verifier/python python -W error -m unittest discover -s verifier/python/tests -v
+      - name: Run FPN2 Relation 2 (8 MiB, Q=72) Rust + detached Python CPU demo
+        run: python demo/run_v1_relation2_demo.py
+      - name: Run circuit, IR & lowered-AIR audit tests
+        run: PYTHONPATH=prover:serve python -W error -m unittest discover -s tests/audit -q
+
+  fpn2-golden-vectors:
+    name: FPN2 Golden Vectors Regenerate Byte-Identically
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      CUDA_VISIBLE_DEVICES: ""
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install numpy
+        run: python -m pip install --upgrade pip && pip install numpy
+      - name: Verify golden FPN2 vectors (primitives, containers, relations 3-6)
+        run: python specs/vectors/generate.py --check
+
+  fpn2-unit-tests:
+    name: FPN2 Unit Tests (${{ matrix.shard }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        # Shards are defined in scripts/ci_unit_shards.py; every tests/unit module not named there runs in `fast`.
+        shard: [fast, relations-4-5, agentic-e2e, relation6]
+    env:
+      CUDA_VISIBLE_DEVICES: ""
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install numpy for backend/prover tests
+        run: python -m pip install --upgrade pip && pip install numpy
+      - name: Build Rust fpn-verify (release)
+        run: cargo build --manifest-path core/Cargo.toml --release
+      - name: Run tests/unit shard (-W error, Rust cross-checks required)
+        run: python scripts/ci_unit_shards.py ${{ matrix.shard }}
 
   lean4:
     name: Lean 4.29.1 Formal Verification
@@ -65,7 +135,7 @@ jobs:
         run: |
           curl https://elan.lean-lang.org/elan-init.sh -sSf | sh -s -- -y --default-toolchain none
           echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
-      - name: Fetch Mathlib cache and verify all 19 modules (0 sorry, standard axioms only)
+      - name: Fetch Mathlib cache and verify all Lean modules + FPN2 vector parity (0 sorry, standard axioms only)
         working-directory: lean
         run: |
           lake exe cache get

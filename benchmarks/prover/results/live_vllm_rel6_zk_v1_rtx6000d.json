@@ -1,0 +1,837 @@
+{
+ "bench": "tier2/bench_live_vllm_rel6_zk_e2e",
+ "git_rev": null,
+ "machine": {
+  "host": "rtx6000d-blackwell-node",
+  "python": "3.12.3",
+  "native_threads": 16,
+  "gpu": "NVIDIA RTX 6000D, 85651 MiB, 595.71.05"
+ },
+ "honest_limits": [
+  "The x-chunk commitment binds the committed X BEFORE the challenge but does not prove X equals the served activation: captured rows enter commit_x from the prover's PageStore (host), with no in-kernel GPU commitment during serving, and the plaintext trace_payload_root opening that tied X to the capture in earlier plaintext-trace benchmarks is what this zero-plaintext path replaces (a prover that commits different rows is caught only by other relations, e.g. the relation-4 chain, not by relation 6).",
+  "commit_x cost and retained host memory scale linearly with the number of pre-committed chunks (one 2^22-cell ZK-blinded vector, ~96 MiB of host cells, per 64 rows); the blinding draw (os.urandom) dominates per-chunk time.",
+  "Only x_attn / x_mlp rows are committed (o_proj / down_proj inputs are not in the schedule); the schedule covers the fresh turn-2 positions only (cached-prefix positions get no draw, as in earlier plaintext-trace benchmarks).",
+  "X and Y carry no range proof inside relation 6: |x| <= 2^23 is enforced by the honest prover's partition_rows, not by the circuit; integer faithfulness (sum |W||X| < 2^62) is reported, not proved.",
+  "Relation 6 proves Y = W X for the WINDOWED operands (capped exponent window, 23 bits); the window tail vs the exact BF16 / FP8 operands and the served kernel's own FP8 activation quantisation (MoE) are outside the proof; Y is private and is not compared to the served output here.",
+  "MoE: the challenged chunk's captured top-8 expert ids (routing metadata, 8 bytes per row) are disclosed to the verifier so it can re-derive the routed-expert tile; they are bound pre-challenge by a salted per-chunk digest in the x_chunks tree, but are not themselves proven to be the router's argmax.",
+  "One chunk of n_chunks is drawn uniformly per request: k affected chunks are sampled with probability k / n_chunks (miss probability 1 - k / n_chunks). Turning this sampling rate into end-to-end cheating detection requires additionally binding X to the served GPU capture and Y to the served output (neither is enforced by relation 6 alone).",
+  "Single-proof blinding budget per chunk: prove_rel6_zk_bundle enforces at most one proof per committed chunk (identical retries return the cached bundle; distinct challenges raise E_CHUNK_BLINDING_EXHAUSTED); benchmark timing repetitions allocate independently blinded commitments."
+ ],
+ "runs": {
+  "Qwen3-0.6B": {
+   "model": "Qwen3-0.6B",
+   "kind": "dense_bf16",
+   "evidence": "MEASURED",
+   "serving": {
+    "engine": "vLLM 0.33.0",
+    "model": "Qwen3-0.6B",
+    "runner": [
+     "vllm.v1.worker.gpu.model_runner.GPUModelRunner"
+    ],
+    "load_format": "fpn_capture",
+    "capture_tier": "FULL_NO_KV",
+    "capture_slots": [
+     "a",
+     "h_L",
+     "h_in",
+     "h_mid",
+     "lse",
+     "o",
+     "q",
+     "x_attn",
+     "x_f",
+     "x_mlp"
+    ],
+    "row_bytes": 636672,
+    "allow_bf16_reduced_precision_reduction": false,
+    "enable_prefix_caching": true,
+    "llm_init_s": 23.36,
+    "turn1": {
+     "prompt_tokens": 31,
+     "new_tokens": 48,
+     "serve_s": 0.1303,
+     "settle_ms": 12.14,
+     "text": "Certainly! Let's break down how a **transformer decoder layer** computes **attention** step by step, using **equations** and a **step-by-step explanation**.\n\n---\n\n### **1. Input to the Transformer**\n\n"
+    },
+    "turn2_batch_with_side": {
+     "turn2_prompt_tokens": 106,
+     "turn2_cached_tokens": 64,
+     "side_prompt_tokens": 25,
+     "new_tokens_each": 48,
+     "serve_s": 0.2119,
+     "settle_ms": 4.09,
+     "text": "A transformer decoder layer computes attention by first taking the input sequence and applying a **self-attention mechanism** to find the most relevant words. Then, it uses this attention to compute a"
+    },
+    "traces": {
+     "turn1-b5375e91": {
+      "n_tokens": 78,
+      "n_full_pages": 4,
+      "tip": "e1f8ef3cfc57abcbd7f7b2fa2d86e5165eb4abfca76837905756609e9c4ef154",
+      "verified_tokens": 78
+     },
+     "side-81f4cc04": {
+      "n_tokens": 72,
+      "n_full_pages": 4,
+      "tip": "75a30cd914eebdacbc50f8cd13be552bb4112b66647f92a0934bc5bb6816e59a",
+      "verified_tokens": 72
+     },
+     "turn2-a2343b1c": {
+      "n_tokens": 153,
+      "n_full_pages": 9,
+      "tip": "52192df1ffec21d97cb81c35749c9e507ea97ed4203f6d83dcf66bf7ebf2afaf",
+      "verified_tokens": 153
+     }
+    },
+    "pagestore_read_turn2_verified_pages_ms": 84.98,
+    "sink_stats": {
+     "records": 98,
+     "rows": 239,
+     "bytes": 152164608,
+     "lost_records": 0,
+     "orphan_segments": 0,
+     "poisoned_requests": 0
+    },
+    "ring_overflow_events": 0
+   },
+   "setup": {
+    "setup_cert_id": "7de8eafa56fde7b9610b50d71daf99692e2b68bdc4515156dd46b12cd1a7b228",
+    "weight_commitment_root": "2e67d24a7c62a247b74453bc79e25fc515b850f49aaf7776d8ec083e7e2a81b8",
+    "weight_commit_stats": {
+     "tensors": 198,
+     "leaves": 22936,
+     "tree_depth": 15,
+     "elements": 751566848,
+     "K": 1024,
+     "rows": 32,
+     "manifest_bytes": 12520,
+     "max_tile_shift": 44,
+     "leaf_hash_s": 40.561,
+     "residual_tensors": 113,
+     "residual_bytes": 131072,
+     "residual_hash_s": 0.002,
+     "fp8_tensors": 0,
+     "fp8_bytes": 0,
+     "fp8_scale_tensors_in_leaves": 0,
+     "manifest_version": 1,
+     "window_int_bits_bound": null,
+     "total_s": 40.595
+    },
+    "weight_commit_wall_ms": 40596.0,
+    "note": "one-time setup over the checkpoint safetensors (FP8 matrices tiled losslessly with their block-128 scales); MoE F32 routers are in the residual digest (not drawn here)"
+   },
+   "precommit": {
+    "row_schedule": {
+     "positions": [
+      64,
+      153
+     ],
+     "n_positions": 89,
+     "layers": 28,
+     "slots": [
+      "x_attn",
+      "x_mlp"
+     ],
+     "column_chunks_per_row": 1,
+     "n_rows": 4984,
+     "schedule_digest": "7301f208b1cb5d161e5f26303d7d254a13f1e812eb5bc0eaf4ce79388d0f5882",
+     "cached_prefix_positions_excluded": 64,
+     "trace_tokens": 153
+    },
+    "profile": "fpn2-folded-vec-bound-n22-v1",
+    "B": 64,
+    "K": 1024,
+    "int_bits": 23,
+    "n_chunks": 78,
+    "padded_rows_in_last_chunk": 8,
+    "x_chunks_root": "203f1723712abeab88ae939a92c0233be684d2bc8132ad8dce480a03dbe9638b",
+    "x_chunks_tree_depth": 7,
+    "layout_fingerprint": "1e9e4f72b15eaf19157647d6c6baf5e1493cdaa8c0bd903456c32e73aae071bd",
+    "c_pre": "3e08d4a0e4dd1a3372688faed18e73964d9e06967364a01df48119c61dedfd78",
+    "routing_metadata_bound": false,
+    "timing_ms": {
+     "pagestore_read_rows": 59.7,
+     "window_rows": 125.4,
+     "commit_x_chunks_total": 19508.1,
+     "commit_x_total_sum": 19227.8,
+     "commit_x_per_chunk": {
+      "median": 244.6,
+      "mean": 246.5,
+      "min": 237.5,
+      "max": 331.2,
+      "first": 331.2
+     },
+     "x_chunks_tree": 6.3,
+     "precommit_x_chunks": 38.622
+    },
+    "host_cells_retained_mib": 39.0,
+    "maxrss_mib_before_commit": 4801.8,
+    "maxrss_mib_after_commit": 4801.8
+   },
+   "challenge_mode": "fresh_os_nonce_after_cpre",
+   "relation6": {
+    "profile": "fpn2-folded-vec-bound-n22-v1",
+    "container_bytes": 1048576,
+    "chunk_idx": 72,
+    "rows_in_chunk": [
+     [
+      146,
+      8,
+      0,
+      0
+     ],
+     [
+      146,
+      8,
+      1,
+      0
+     ],
+     [
+      146,
+      9,
+      0,
+      0
+     ],
+     [
+      146,
+      9,
+      1,
+      0
+     ],
+     "..."
+    ],
+    "padded_rows_in_chunk": 0,
+    "tile_kinds": {
+     "bf16_attention": 32,
+     "bf16_mlp": 32
+    },
+    "coords_sample": [
+     [
+      "model.layers.8.self_attn.v_proj.weight",
+      672,
+      0
+     ],
+     [
+      "model.layers.8.mlp.up_proj.weight",
+      960,
+      0
+     ],
+     [
+      "model.layers.9.self_attn.q_proj.weight",
+      1184,
+      0
+     ],
+     [
+      "model.layers.9.mlp.up_proj.weight",
+      1184,
+      0
+     ],
+     [
+      "model.layers.10.self_attn.q_proj.weight",
+      1696,
+      0
+     ],
+     [
+      "model.layers.10.mlp.gate_proj.weight",
+      128,
+      0
+     ]
+    ],
+    "integer_bits_max": 49,
+    "integer_faithful": "64/64",
+    "engine": "CudaEngine",
+    "prove_reps": [
+     {
+      "rep": 0,
+      "wall_ms": 2522.4,
+      "fresh_blinding": true,
+      "open_tiles_ms": 39.7,
+      "tiles_and_y_ms": 380.7,
+      "recommit_chunk_ms": 245.9,
+      "prove_bound_ms": 1835.1,
+      "prove_bound_phases_ms": {
+       "commit_weights": 166.8,
+       "witness_sample": 167.4,
+       "commit_witness": 74.4,
+       "ip_sumcheck": 333.5,
+       "batch_weights": 671.5,
+       "pair_open": 378.2
+      }
+     },
+     {
+      "rep": 1,
+      "wall_ms": 1942.1,
+      "fresh_blinding": true,
+      "recommit_chunk_ms": 250.7,
+      "prove_bound_ms": 1679.5,
+      "prove_bound_phases_ms": {
+       "commit_weights": 164.3,
+       "witness_sample": 167.7,
+       "commit_witness": 73.2,
+       "ip_sumcheck": 326.2,
+       "batch_weights": 561.8,
+       "pair_open": 342.1
+      }
+     },
+     {
+      "rep": 2,
+      "wall_ms": 1914.7,
+      "fresh_blinding": true,
+      "recommit_chunk_ms": 250.2,
+      "prove_bound_ms": 1652.6,
+      "prove_bound_phases_ms": {
+       "commit_weights": 164.0,
+       "witness_sample": 167.5,
+       "commit_witness": 72.3,
+       "ip_sumcheck": 321.0,
+       "batch_weights": 552.9,
+       "pair_open": 331.7
+      }
+     }
+    ],
+    "prove_bound_n22_ms_steady_median": 1666.0,
+    "container_sha256": "22b46a9683131594ac62a6839568d8f4cda240af22d546618cb888ec7b180759"
+   },
+   "verify": {
+    "verdict": "VERIFIED",
+    "rust": "VERIFIED",
+    "python": "VERIFIED",
+    "rust_verify_ms_median_of_5": 24.71,
+    "rust_wall_ms": [
+     25.06,
+     24.67,
+     24.76,
+     24.49,
+     24.71
+    ],
+    "python_wall_ms": 226.8,
+    "x_chunk_opening_bytes": 325,
+    "routing_opening_bytes": 0,
+    "weight_tile_opening_bytes": 16824753,
+    "container_bytes": 1048576,
+    "plaintext_activation_bytes_disclosed": 0,
+    "plaintext_activation_bytes_disclosed_note": "the verifier API has no activation parameter; the reply carries x_root + path (x-chunk opening), weight tiles, the container",
+    "tiles_check": {
+     "tiles": 64,
+     "tree_depth": 15,
+     "leaves": 22936,
+     "tensors": 198,
+     "fp8_tiles": 0,
+     "fp8_window_int_bits": null
+    },
+    "timings_ms": {
+     "cpre_chunk_path_ms": 14.38,
+     "tiles_weight_root_ms": 264.38,
+     "relation6_cli_ms": 359.14
+    },
+    "verify_rel6_zk_bundle_wall_ms": 638.3
+   },
+   "forgeries": {
+    "a1_case_c_substitution_claims_honest_x_root": {
+     "verdict": "REJECTED: E_MERKLE",
+     "expected": "E_MERKLE",
+     "rejected_as_expected": true
+    },
+    "a2_case_c_sumcheck_on_substituted_x_honest_x_com": {
+     "verdict": "REJECTED: E_SUMCHECK",
+     "expected": "E_SUMCHECK",
+     "rejected_as_expected": true
+    },
+    "b1_post_challenge_x_root_prime": {
+     "verdict": "REJECTED: E_X_CHUNK_PATH",
+     "expected": "E_X_CHUNK_PATH",
+     "rejected_as_expected": true
+    },
+    "b2_rebuilt_x_chunks_root": {
+     "verdict": "REJECTED: E_CPRE_MISMATCH",
+     "expected": "E_CPRE_MISMATCH",
+     "rejected_as_expected": true
+    },
+    "c_relation5_downgrade_bundle": {
+     "verdict": "REJECTED: E_X_ROOT_PINNED",
+     "expected": "E_X_ROOT_PINNED",
+     "rejected_as_expected": true
+    },
+    "c_relation5_downgrade_rust_cli": {
+     "verdict": "E_X_ROOT_PINNED",
+     "expected": "E_X_ROOT_PINNED",
+     "rejected_as_expected": true
+    },
+    "c_relation5_downgrade_python_cli": {
+     "verdict": "E_X_ROOT_PINNED",
+     "expected": "E_X_ROOT_PINNED",
+     "rejected_as_expected": true
+    },
+    "d_tampered_x_chunk_sibling": {
+     "verdict": "REJECTED: E_X_CHUNK_PATH",
+     "expected": "E_X_CHUNK_PATH",
+     "rejected_as_expected": true
+    },
+    "d_wrong_chunk_index": {
+     "verdict": "REJECTED: E_X_CHUNK_INDEX",
+     "expected": "E_X_CHUNK_INDEX",
+     "rejected_as_expected": true
+    },
+    "d_tampered_weight_tile": {
+     "verdict": "REJECTED: E_TILE_PATH",
+     "expected": "E_TILE_PATH",
+     "rejected_as_expected": true
+    },
+    "d_missing_c_pre": {
+     "verdict": "REJECTED: E_CPRE_REQUIRED",
+     "expected": "E_CPRE_REQUIRED",
+     "rejected_as_expected": true
+    },
+    "stale_n_s": {
+     "verdict": "REJECTED: E_NS_MISMATCH",
+     "expected": "E_NS_MISMATCH",
+     "rejected_as_expected": true
+    }
+   },
+   "all_forgeries_rejected_as_expected": true,
+   "summary_measured": {
+    "commit_x_chunks_ms": 19508.1,
+    "commit_x_per_chunk_ms_median": 244.6,
+    "n_chunks": 78,
+    "prove_bound_n22_ms": 1666.0,
+    "rust_verify_ms": 24.71,
+    "x_chunk_opening_bytes": 325,
+    "plaintext_activation_bytes_disclosed": 0,
+    "integer_faithful": "64/64",
+    "verdict": "VERIFIED",
+    "all_forgeries_rejected_as_expected": true
+   },
+   "git_rev": null,
+   "command": "bench/tier2/bench_live_vllm_rel6_zk_e2e.py --model <MODEL_DIR>/Qwen3-0.6B --out <OUT_JSON>",
+   "wall_s": 115.0
+  },
+  "Qwen3-30B-A3B-FP8": {
+   "model": "Qwen3-30B-A3B-FP8",
+   "kind": "moe_fp8",
+   "evidence": "MEASURED",
+   "serving": {
+    "engine": "vLLM 0.33.0",
+    "model": "Qwen3-30B-A3B-FP8",
+    "runner": [
+     "vllm.v1.worker.gpu.model_runner.GPUModelRunner"
+    ],
+    "load_format": "fpn_capture",
+    "capture_tier": "FULL_NO_KV",
+    "capture_act": false,
+    "vllm_use_deep_gemm": "0",
+    "live_modules": {
+     "gate": "GateLinear",
+     "gate_weight_dtype": "torch.bfloat16",
+     "experts": "MoERunner",
+     "router": "FusedTopKRouter",
+     "qkv_proj_weight_dtype": "torch.float8_e4m3fn",
+     "input_layernorm_dtype": "torch.bfloat16",
+     "quant_method_monolithic": false
+    },
+    "capture_slots_layer0": [
+     [
+      "h_in",
+      2048
+     ],
+     [
+      "x_attn",
+      2048
+     ],
+     [
+      "q",
+      4096
+     ],
+     [
+      "o",
+      4096
+     ],
+     [
+      "h_mid",
+      2048
+     ],
+     [
+      "x_mlp",
+      2048
+     ],
+     [
+      "lse",
+      64
+     ],
+     [
+      "expert_ids",
+      8
+     ]
+    ],
+    "row_bytes": 1587968,
+    "layout_fingerprint": "1c584735b12c04b83c6af2c875808f0c432b44d05ba14d70f0a1b528d4189f64",
+    "allow_bf16_reduced_precision_reduction": false,
+    "enable_prefix_caching": true,
+    "llm_init_s": 133.62,
+    "max_num_batched_tokens": 128,
+    "turn1": {
+     "prompt_tokens": 32,
+     "new_tokens": 48,
+     "serve_s": 0.3175,
+     "text": "A **Mixture-of-Experts (MoE)** model is a type of neural network architecture that uses multiple **expert** sub-networks, and for each input, it **routes** the input to a subset of these experts. In"
+    },
+    "turn2_batch_with_side": {
+     "turn2_prompt_tokens": 107,
+     "turn2_cached_tokens": 64,
+     "side_prompt_tokens": 25,
+     "new_tokens_each": 48,
+     "serve_s": 0.4452,
+     "text": "A mixture-of-experts (MoE) model uses many smaller expert networks instead of one large one.  \nFor each token, a router decides which experts should process it.  \nOnly the selected experts are used, m"
+    },
+    "traces": {
+     "turn1-8dec68ed": {
+      "n_tokens": 79,
+      "n_full_pages": 4
+     },
+     "side-9d06dbb0": {
+      "n_tokens": 72,
+      "n_full_pages": 4
+     },
+     "turn2-b42ed17e": {
+      "n_tokens": 154,
+      "n_full_pages": 9
+     }
+    },
+    "sink_stats": {
+     "records": 98,
+     "rows": 241,
+     "bytes": 382700288,
+     "lost_records": 0,
+     "orphan_segments": 0,
+     "poisoned_requests": 0
+    },
+    "store_stats": {
+     "pages_written": 16,
+     "dedup_hits": 0,
+     "bytes_written": 382700288,
+     "bytes_deduped": 0,
+     "evictions": 0,
+     "deferred_evictions": 0
+    },
+    "ring_overflow_events": 0
+   },
+   "setup": {
+    "setup_cert_id": "b96f4e1e4aa9e219be79bf7dbfc6c1a584c7f0c241fa825721c72cfbc972cb7e",
+    "weight_commitment_root": "e22fedc5e9cf7e45725cc9ce65e2c5ab9cb0e5f2bdd534613710da653f94c3f2",
+    "weight_commit_stats": {
+     "tensors": 18624,
+     "leaves": 1010688,
+     "tree_depth": 20,
+     "elements": 29896998912,
+     "K": 1024,
+     "rows": 32,
+     "manifest_bytes": 1363139,
+     "max_tile_shift": 0,
+     "leaf_hash_s": 102.678,
+     "residual_tensors": 243,
+     "residual_bytes": 2540494848,
+     "residual_hash_s": 6.229,
+     "fp8_tensors": 18624,
+     "fp8_bytes": 29896998912,
+     "fp8_scale_tensors_in_leaves": 18624,
+     "manifest_version": 2,
+     "window_int_bits_bound": 23,
+     "total_s": 109.788
+    },
+    "weight_commit_wall_ms": 109901.3,
+    "note": "one-time setup over the checkpoint safetensors (FP8 matrices tiled losslessly with their block-128 scales); MoE F32 routers are in the residual digest (not drawn here)"
+   },
+   "precommit": {
+    "row_schedule": {
+     "positions": [
+      64,
+      154
+     ],
+     "n_positions": 90,
+     "layers": 48,
+     "slots": [
+      "x_attn",
+      "x_mlp"
+     ],
+     "column_chunks_per_row": 2,
+     "n_rows": 17280,
+     "schedule_digest": "8f3da0856970643fec2e9861559a51954582ed621aebca1905be9bb7452a2349",
+     "cached_prefix_positions_excluded": 64,
+     "trace_tokens": 154
+    },
+    "profile": "fpn2-folded-vec-bound-n22-v1",
+    "B": 64,
+    "K": 1024,
+    "int_bits": 23,
+    "n_chunks": 270,
+    "padded_rows_in_last_chunk": 0,
+    "x_chunks_root": "18502cdaa3d3d901048188282e824c8c9374a1bec9ea1fe0da471371858a4b13",
+    "x_chunks_tree_depth": 9,
+    "layout_fingerprint": "1c584735b12c04b83c6af2c875808f0c432b44d05ba14d70f0a1b528d4189f64",
+    "c_pre": "775f31e0ee9dc65f41005044692af910416f4c51f76666ca7400650c308a7053",
+    "routing_metadata_bound": true,
+    "timing_ms": {
+     "pagestore_read_rows": 197.4,
+     "window_rows": 504.6,
+     "commit_x_chunks_total": 45073.5,
+     "commit_x_total_sum": 44124.0,
+     "commit_x_per_chunk": {
+      "median": 172.4,
+      "mean": 163.4,
+      "min": 129.3,
+      "max": 269.7,
+      "first": 269.7
+     },
+     "x_chunks_tree": 17.85,
+     "precommit_x_chunks": 30.064
+    },
+    "host_cells_retained_mib": 135.01,
+    "maxrss_mib_before_commit": 7908.2,
+    "maxrss_mib_after_commit": 7908.2
+   },
+   "challenge_mode": "fresh_os_nonce_after_cpre",
+   "relation6": {
+    "profile": "fpn2-folded-vec-bound-n22-v1",
+    "container_bytes": 1048576,
+    "chunk_idx": 63,
+    "rows_in_chunk": [
+     [
+      85,
+      0,
+      0,
+      0
+     ],
+     [
+      85,
+      0,
+      0,
+      1
+     ],
+     [
+      85,
+      0,
+      1,
+      0
+     ],
+     [
+      85,
+      0,
+      1,
+      1
+     ],
+     "..."
+    ],
+    "padded_rows_in_chunk": 0,
+    "tile_kinds": {
+     "fp8_attention": 32,
+     "fp8_expert": 32
+    },
+    "coords_sample": [
+     [
+      "model.layers.0.self_attn.q_proj.weight",
+      2816,
+      0
+     ],
+     [
+      "model.layers.0.self_attn.k_proj.weight",
+      288,
+      1024
+     ],
+     [
+      "model.layers.0.mlp.experts.21.gate_proj.weight",
+      320,
+      0
+     ],
+     [
+      "model.layers.0.mlp.experts.97.up_proj.weight",
+      128,
+      1024
+     ],
+     [
+      "model.layers.1.self_attn.q_proj.weight",
+      1472,
+      0
+     ],
+     [
+      "model.layers.1.self_attn.k_proj.weight",
+      192,
+      1024
+     ]
+    ],
+    "integer_bits_max": 51,
+    "integer_faithful": "64/64",
+    "engine": "CudaEngine",
+    "prove_reps": [
+     {
+      "rep": 0,
+      "wall_ms": 2101.1,
+      "fresh_blinding": true,
+      "open_tiles_ms": 5.7,
+      "tiles_and_y_ms": 260.8,
+      "recommit_chunk_ms": 187.1,
+      "prove_bound_ms": 1554.9,
+      "prove_bound_phases_ms": {
+       "commit_weights": 131.3,
+       "witness_sample": 134.0,
+       "commit_witness": 54.7,
+       "ip_sumcheck": 292.7,
+       "batch_weights": 615.8,
+       "pair_open": 291.1
+      }
+     },
+     {
+      "rep": 1,
+      "wall_ms": 1690.0,
+      "fresh_blinding": true,
+      "recommit_chunk_ms": 186.8,
+      "prove_bound_ms": 1493.2,
+      "prove_bound_phases_ms": {
+       "commit_weights": 128.9,
+       "witness_sample": 134.8,
+       "commit_witness": 53.3,
+       "ip_sumcheck": 285.6,
+       "batch_weights": 603.1,
+       "pair_open": 252.1
+      }
+     },
+     {
+      "rep": 2,
+      "wall_ms": 1694.2,
+      "fresh_blinding": true,
+      "recommit_chunk_ms": 196.8,
+      "prove_bound_ms": 1487.3,
+      "prove_bound_phases_ms": {
+       "commit_weights": 129.6,
+       "witness_sample": 134.8,
+       "commit_witness": 53.8,
+       "ip_sumcheck": 285.4,
+       "batch_weights": 594.5,
+       "pair_open": 253.2
+      }
+     }
+    ],
+    "prove_bound_n22_ms_steady_median": 1490.2,
+    "container_sha256": "332a5118a9be488b387f56263813417c1e1c0796f3f1d96d08f655135fd5d42c"
+   },
+   "verify": {
+    "verdict": "VERIFIED",
+    "rust": "VERIFIED",
+    "python": "VERIFIED",
+    "rust_verify_ms_median_of_5": 23.41,
+    "rust_wall_ms": [
+     13.95,
+     24.69,
+     24.67,
+     23.41,
+     20.86
+    ],
+    "python_wall_ms": 187.5,
+    "x_chunk_opening_bytes": 389,
+    "routing_opening_bytes": 568,
+    "weight_tile_opening_bytes": 3507995,
+    "container_bytes": 1048576,
+    "plaintext_activation_bytes_disclosed": 0,
+    "plaintext_activation_bytes_disclosed_note": "the verifier API has no activation parameter; the reply carries x_root + path (x-chunk opening), weight tiles, the container and the challenged chunk's top-8 expert ids",
+    "tiles_check": {
+     "tiles": 64,
+     "tree_depth": 20,
+     "leaves": 1010688,
+     "tensors": 18624,
+     "fp8_tiles": 64,
+     "fp8_window_int_bits": 23
+    },
+    "timings_ms": {
+     "cpre_chunk_path_ms": 36.76,
+     "tiles_weight_root_ms": 257.94,
+     "relation6_cli_ms": 302.17
+    },
+    "verify_rel6_zk_bundle_wall_ms": 597.9
+   },
+   "forgeries": {
+    "a1_case_c_substitution_claims_honest_x_root": {
+     "verdict": "REJECTED: E_MERKLE",
+     "expected": "E_MERKLE",
+     "rejected_as_expected": true
+    },
+    "a2_case_c_sumcheck_on_substituted_x_honest_x_com": {
+     "verdict": "REJECTED: E_SUMCHECK",
+     "expected": "E_SUMCHECK",
+     "rejected_as_expected": true
+    },
+    "b1_post_challenge_x_root_prime": {
+     "verdict": "REJECTED: E_X_CHUNK_PATH",
+     "expected": "E_X_CHUNK_PATH",
+     "rejected_as_expected": true
+    },
+    "b2_rebuilt_x_chunks_root": {
+     "verdict": "REJECTED: E_CPRE_MISMATCH",
+     "expected": "E_CPRE_MISMATCH",
+     "rejected_as_expected": true
+    },
+    "c_relation5_downgrade_bundle": {
+     "verdict": "REJECTED: E_X_ROOT_PINNED",
+     "expected": "E_X_ROOT_PINNED",
+     "rejected_as_expected": true
+    },
+    "c_relation5_downgrade_rust_cli": {
+     "verdict": "E_X_ROOT_PINNED",
+     "expected": "E_X_ROOT_PINNED",
+     "rejected_as_expected": true
+    },
+    "c_relation5_downgrade_python_cli": {
+     "verdict": "E_X_ROOT_PINNED",
+     "expected": "E_X_ROOT_PINNED",
+     "rejected_as_expected": true
+    },
+    "d_tampered_x_chunk_sibling": {
+     "verdict": "REJECTED: E_X_CHUNK_PATH",
+     "expected": "E_X_CHUNK_PATH",
+     "rejected_as_expected": true
+    },
+    "d_wrong_chunk_index": {
+     "verdict": "REJECTED: E_X_CHUNK_INDEX",
+     "expected": "E_X_CHUNK_INDEX",
+     "rejected_as_expected": true
+    },
+    "d_tampered_weight_tile": {
+     "verdict": "REJECTED: E_TILE_PATH",
+     "expected": "E_TILE_PATH",
+     "rejected_as_expected": true
+    },
+    "d_missing_c_pre": {
+     "verdict": "REJECTED: E_CPRE_REQUIRED",
+     "expected": "E_CPRE_REQUIRED",
+     "rejected_as_expected": true
+    },
+    "moe_tampered_routing_expert_id": {
+     "verdict": "REJECTED: E_X_CHUNK_META",
+     "expected": "E_X_CHUNK_META",
+     "rejected_as_expected": true
+    },
+    "stale_n_s": {
+     "verdict": "REJECTED: E_NS_MISMATCH",
+     "expected": "E_NS_MISMATCH",
+     "rejected_as_expected": true
+    }
+   },
+   "all_forgeries_rejected_as_expected": true,
+   "summary_measured": {
+    "commit_x_chunks_ms": 45073.5,
+    "commit_x_per_chunk_ms_median": 172.4,
+    "n_chunks": 270,
+    "prove_bound_n22_ms": 1490.2,
+    "rust_verify_ms": 23.41,
+    "x_chunk_opening_bytes": 389,
+    "plaintext_activation_bytes_disclosed": 0,
+    "integer_faithful": "64/64",
+    "verdict": "VERIFIED",
+    "all_forgeries_rejected_as_expected": true
+   },
+   "git_rev": null,
+   "command": "bench/tier2/bench_live_vllm_rel6_zk_e2e.py --model <MODEL_DIR>/Qwen3-30B-A3B-FP8 --out <OUT_JSON>",
+   "wall_s": 319.6
+  }
+ },
+ "errata": [
+  "disclosure note (no measured value changed): honest_limits[1] in this file was inherited from the earlier pre-lazy script template (~96 MiB/chunk); this run actually used lazy ephemeral AES-256-CTR seeding (retaining 39.0 MiB for Qwen3-0.6B and 135.01 MiB for Qwen3-30B-A3B-FP8 in total). maxrss_mib_before_commit and maxrss_mib_after_commit measure process peak RSS (VmHWM), so equal values indicate no increase in recorded peak RSS rather than zero transient current RSS."
+ ],
+ "reproduction_note": "Underlying zero-plaintext activation precommitment, Relation 6 prover, and Rust/Python verifiers live in prover/fpn_prover/runtime/x_commit.py, prover/fpn_prover/backend/folded_vec_bound.py, core/src/folded_vec_bound.rs, and tests/unit/test_x_commit_rel6_e2e.py."
+}

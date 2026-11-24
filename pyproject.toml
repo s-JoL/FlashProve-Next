@@ -4,12 +4,12 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "flashprove-next"
-version = "0.3.0"
+version = "1.0.0"
 description = "Zero-knowledge verifiable inference for production LLM APIs served by native floating-point engines."
 readme = "README.md"
 license = { text = "Apache-2.0" }
 requires-python = ">=3.10"
-authors = [{ name = "FlashProve-Next contributors" }]
+authors = [{ name = "Liang Song", email = "sl12160010@gmail.com" }]
 keywords = ["zero-knowledge", "verifiable inference", "LLM", "sumcheck", "vLLM"]
 classifiers = [
     "Programming Language :: Python :: 3",

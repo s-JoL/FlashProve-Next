@@ -98,7 +98,8 @@ def vec_key(role_id, layer_p1, chunk=0):
 def cfg_sizes(prm):
     """Profile-derived table lengths (NT, NV, NL) fitting inside two configuration rows of width prm.nc >= 1024."""
     assert prm.nc >= 1024, f"cfg_rows requires nc >= 1024, got {prm.nc}"
-    return min(4096, prm.nc // 8), min(512, prm.nc // 16), min(128, prm.nc // 16)
+    nt_cap = 4096 if prm.R_MAX <= 2048 else max(4096, prm.R_MAX)
+    return min(nt_cap, prm.nc // 8), min(512, prm.nc // 16), min(128, prm.nc // 16)
 
 
 def tile_inexact(codes, G):
@@ -147,21 +148,85 @@ class Params:
 
 QWEN_PARAMS = Params()
 QWEN_PARAMS_R = Params(R_MAX=2048)     # with the radius matrix W^r (rows R_MAX/2 + t, wsum_zk / certified gadgets)
+QWEN4B_PARAMS_R = Params(R_MAX=16384, G_LO=14)  # 4B-class dense models (TO=TI=1024, 5,673 rows + W^r <= 16384, g in [16, 28])
 
 
 # ============================================================================ checkpoint access (bf16 safetensors)
 class Checkpoint:
-    """Minimal safetensors reader (memory-mapped bf16 codes as uint16; no torch)."""
+    """Minimal safetensors reader (single-file or sharded `model.safetensors.index.json`; memory-mapped bf16, no torch)."""
 
     def __init__(self, path):
-        f = os.path.join(path, "model.safetensors") if os.path.isdir(path) else path
-        with open(f, "rb") as fh:
-            hl = int.from_bytes(fh.read(8), "little")
-            hdr = json.loads(fh.read(hl))
-        self.meta = {k: v for k, v in hdr.items() if k != "__metadata__"}
-        self.mm = np.memmap(f, dtype=np.uint8, mode="r")
-        self.base = 8 + hl
-        cfgp = os.path.join(os.path.dirname(f), "config.json")
+        self._shards = {}
+        self._shard_of = {}
+        self.meta = {}
+        wmap = None
+        if os.path.isdir(path):
+            single = os.path.join(path, "model.safetensors")
+            idx_path = os.path.join(path, "model.safetensors.index.json")
+            if os.path.exists(single) and os.path.exists(idx_path):
+                raise ValueError(
+                    f"ambiguous checkpoint directory {path!r}: contains both model.safetensors and model.safetensors.index.json"
+                )
+            if os.path.exists(single):
+                shard_files = [single]
+            elif os.path.exists(idx_path):
+                with open(idx_path, "r", encoding="utf-8") as fh:
+                    idx = json.load(fh)
+                wmap = idx.get("weight_map")
+                if not isinstance(wmap, dict) or not wmap:
+                    raise ValueError(f"invalid or empty weight_map in {idx_path}")
+                base_dir = os.path.realpath(path)
+                shard_files = []
+                seen_sf = set()
+                for tname, fn in wmap.items():
+                    if not isinstance(tname, str) or not isinstance(fn, str) or not fn:
+                        raise ValueError(f"invalid weight_map entry {tname!r}: {fn!r}")
+                    sf = os.path.realpath(os.path.join(path, fn))
+                    if os.path.commonpath([base_dir, sf]) != base_dir or not os.path.isfile(sf):
+                        raise ValueError(f"weight_map shard {fn!r} for {tname!r} missing or outside checkpoint dir")
+                    if sf not in seen_sf:
+                        seen_sf.add(sf)
+                        shard_files.append(sf)
+                shard_files.sort()
+            else:
+                raise FileNotFoundError(f"no model.safetensors or model.safetensors.index.json in {path}")
+            cfg_dir = path
+        else:
+            shard_files = [path]
+            cfg_dir = os.path.dirname(path)
+        shard_hdrs = {}
+        for sf in shard_files:
+            with open(sf, "rb") as fh:
+                hl = int.from_bytes(fh.read(8), "little")
+                hdr = json.loads(fh.read(hl))
+            mm = np.memmap(sf, dtype=np.uint8, mode="r")
+            base = 8 + hl
+            self._shards[sf] = (mm, base)
+            shard_hdrs[sf] = {k: v for k, v in hdr.items() if k != "__metadata__"}
+        if wmap is not None:
+            # Reject duplicate tensor definitions across shards and resolve strictly through weight_map.
+            owner = {}
+            for sf, hdr_k in shard_hdrs.items():
+                for k in hdr_k:
+                    if k in owner:
+                        raise ValueError(f"conflicting duplicate tensor {k!r} in shards {owner[k]!r} and {sf!r}")
+                    owner[k] = sf
+            for tname, fn in wmap.items():
+                sf = os.path.realpath(os.path.join(path, fn))
+                if tname not in shard_hdrs[sf]:
+                    raise ValueError(f"indexed tensor {tname!r} missing from designated shard {fn!r}")
+                self.meta[tname] = shard_hdrs[sf][tname]
+                self._shard_of[tname] = sf
+        else:
+            for sf, hdr_k in shard_hdrs.items():
+                for k, v in hdr_k.items():
+                    self.meta[k] = v
+                    self._shard_of[k] = sf
+        # Preserve legacy `.mm` / `.base` attributes when a single shard is loaded
+        first_mm, first_base = self._shards[shard_files[0]]
+        self.mm = first_mm
+        self.base = first_base
+        cfgp = os.path.join(cfg_dir, "config.json")
         self.config = json.load(open(cfgp)) if os.path.exists(cfgp) else {}
 
     def shapes(self):
@@ -171,15 +236,17 @@ class Checkpoint:
         m = self.meta[name]
         assert m["dtype"] == "BF16", (name, m["dtype"])
         a, b = m["data_offsets"]
-        return self.mm[self.base + a:self.base + b].view(np.uint16).reshape(m["shape"])
+        mm, base = self._shards[self._shard_of[name]]
+        return mm[base + a:base + b].view(np.uint16).reshape(m["shape"])
 
     def drop_cache(self):
         import mmap
-        try:
-            if hasattr(self.mm, "_mmap") and hasattr(mmap, "MADV_DONTNEED"):
-                self.mm._mmap.madvise(mmap.MADV_DONTNEED)
-        except (OSError, AttributeError, ValueError):
-            pass
+        for mm, _ in self._shards.values():
+            try:
+                if hasattr(mm, "_mmap") and hasattr(mmap, "MADV_DONTNEED"):
+                    mm._mmap.madvise(mmap.MADV_DONTNEED)
+            except (OSError, AttributeError, ValueError):
+                pass
 
 
 def model_shapes(ck):
