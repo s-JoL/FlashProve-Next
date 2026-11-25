@@ -87,9 +87,19 @@ jobs:
         run: PYTHONPATH=prover:serve python -W error -m unittest discover -s tests/audit -q
 
   fpn2-golden-vectors:
-    name: FPN2 Golden Vectors Regenerate Byte-Identically
+    name: FPN2 Golden Vectors (${{ matrix.group }})
     runs-on: ubuntu-latest
     timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - group: core
+            files: fpn2_primitives.json,fpn2_containers.json,fpn2_folded_gkr.json
+          - group: air-vec
+            files: fpn2_folded_air.json,fpn2_folded_vec.json
+          - group: vec-bound
+            files: fpn2_folded_vec_bound.json
     env:
       CUDA_VISIBLE_DEVICES: ""
     steps:
@@ -99,8 +109,8 @@ jobs:
           python-version: "3.12"
       - name: Install numpy
         run: python -m pip install --upgrade pip && pip install numpy
-      - name: Verify golden FPN2 vectors (primitives, containers, relations 3-6)
-        run: python specs/vectors/generate.py --check
+      - name: Verify golden FPN2 vectors (${{ matrix.group }})
+        run: python specs/vectors/generate.py --check --only=${{ matrix.files }}
 
   fpn2-unit-tests:
     name: FPN2 Unit Tests (${{ matrix.shard }})
