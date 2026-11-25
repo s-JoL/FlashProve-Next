@@ -1254,6 +1254,7 @@ def gen_bound_multi_tile(drbg, prof):
     Yi = np.einsum("bij,bj->bi", Wi, Xi)
     assert int(np.abs(Yi).max()) < 1 << 40
     W, Xv, Yv = FV.to_field(Wi), FV.to_field(Xi), FV.to_field(Yi)
+    del Wi, Xi, Yi
     eng = CE.HostEngine()
     rng = DrbgRng(drbg)
     xc = FB.commit_x(flay, Xv, rng=rng, engine=eng)

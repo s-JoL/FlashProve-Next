@@ -281,10 +281,23 @@ def pair_open3_engine(engine, comF, comC, comX, a, c, xw, tr, queries, record=No
         sc_round()
     theta, r1 = rs[0], rs[1]
     codeF, codeC, codeX = comF.code_dev, comC.code_dev, comX.code_dev
-    tmp = engine.halve(xp.ascontiguousarray(xp.stack([engine.dev(codeF), engine.fadd(codeF, codeC)], axis=1)
-                                            .reshape(-1, 3)), theta)                       # F + theta C
-    cur = engine.halve(xp.ascontiguousarray(xp.stack([tmp, engine.fadd(tmp, codeX)], axis=1).reshape(-1, 3)), r1)
-    del tmp
+    if hasattr(engine, "cp"):
+        tmp = engine.halve(xp.ascontiguousarray(xp.stack([engine.dev(codeF), engine.fadd(codeF, codeC)], axis=1)
+                                                .reshape(-1, 3)), theta)                   # F + theta C
+        cur = engine.halve(xp.ascontiguousarray(xp.stack([tmp, engine.fadd(tmp, codeX)], axis=1).reshape(-1, 3)), r1)
+        del tmp
+    else:
+        # Chunked F + theta C + r1 X on CPU/HostEngine to avoid multi-GB stacked copies at n = 22.
+        total = len(codeF)
+        cur = np.empty((total, 3), dtype=np.uint64)
+        chunk = 1 << 19
+        for i in range(0, total, chunk):
+            end = min(i + chunk, total)
+            cf = codeF[i:end]
+            cc = codeC[i:end]
+            cx = codeX[i:end]
+            t1 = engine.halve(np.ascontiguousarray(np.stack([cf, engine.fadd(cf, cc)], axis=1).reshape(-1, 3)), theta)
+            cur[i:end] = engine.halve(np.ascontiguousarray(np.stack([t1, engine.fadd(t1, cx)], axis=1).reshape(-1, 3)), r1)
     omega = CE.root_of_unity(CE.RATE << n)
     inv_iota = pow(CE.root_of_unity(4), P - 2, P)
     for t in range(n // 2):
@@ -298,6 +311,7 @@ def pair_open3_engine(engine, comF, comC, comX, a, c, xw, tr, queries, record=No
             roots.append(bytes(host(levels[-1])[0]))
             tr.absorb_bytes(roots[-1])
     final = FA._tup(host(fv).reshape(-1, 3)[0])
+    del fv, wv
     last = host(cur).reshape(-1, 3)
     if any(FA._tup(v) != final for v in last):
         raise AssertionError("final folded codeword is not the constant H~(r)")
@@ -390,6 +404,9 @@ def prove_bound(profile, W, Xv, Y, x_commitment, n_s=b"\x00" * 32, rng=None, hoo
     ip_wire, r_i, r_b, s, lam, e_w, _ = FV.ip_prove(tr, layout, Fip, W, hooks)
     lap("ip_sumcheck")
     zb = FA.z_blind_np(layout, Fa)
+    del Fa, Xa, Fip
+    if "record" not in hooks:
+        del F
     tr.absorb_bytes(enc3(zb))
     mu = tr.squeeze_fp3()
     fb, sparse, xb, cb = batch_terms(layout, r_i, r_b, s, lam, e_w, mu)

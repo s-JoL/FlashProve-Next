@@ -127,25 +127,75 @@ class HostEngine:
                        capture_output=True)
 
     def _run(self, op, words):
-        data = np.concatenate([np.asarray(w, dtype=np.uint64).ravel() for w in words]).astype("<u8").tobytes()
-        r = subprocess.run([self.exe, op], input=data, capture_output=True, check=True)
-        return r.stdout
+        # Stream each buffer directly to the helper's stdin without concatenating multi-GB copies.
+        with subprocess.Popen(
+            [self.exe, op], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+        ) as proc:
+            assert proc.stdin is not None and proc.stdout is not None and proc.stderr is not None
+            try:
+                for w in words:
+                    arr = np.ascontiguousarray(w, dtype="<u8")
+                    mv = memoryview(arr).cast("B")
+                    step = 16 << 20
+                    for off in range(0, len(mv), step):
+                        proc.stdin.write(mv[off:off + step])
+                proc.stdin.close()
+            except BrokenPipeError:
+                pass
+            out = proc.stdout.read()
+            err = proc.stderr.read()
+            rc = proc.wait()
+            if rc != 0:
+                raise subprocess.CalledProcessError(rc, [self.exe, op], output=out, stderr=err)
+            return out
 
     def fold4(self, code, inv_omega, inv_iota, ra, rb):
         quarter = len(code) // 4
-        out = self._run("fold4", [[quarter, inv_omega, inv_iota], list(ra) + list(rb), code])
-        return np.frombuffer(out, dtype="<u8").reshape(quarter, 3).astype(np.uint64)
+        chunk = 1 << 18
+        if quarter <= chunk:
+            out = self._run("fold4", [[quarter, inv_omega, inv_iota, 1], list(ra) + list(rb), code])
+            return np.frombuffer(out, dtype="<u8").reshape(quarter, 3).astype(np.uint64)
+        res = np.empty((quarter, 3), dtype=np.uint64)
+        base_pow = 1
+        step_pow = pow(int(inv_omega), chunk, P)
+        for j in range(0, quarter, chunk):
+            end = min(j + chunk, quarter)
+            c = end - j
+            parts = [code[k * quarter + j:k * quarter + end] for k in range(4)]
+            out = self._run("fold4", [[c, inv_omega, inv_iota, base_pow], list(ra) + list(rb), *parts])
+            res[j:end] = np.frombuffer(out, dtype="<u8").reshape(c, 3)
+            base_pow = (base_pow * step_pow) % P
+        return res
 
     def merkle_leaves(self, code):
         quarter = len(code) // 4
-        out = self._run("leaf", [[quarter], code])
-        return np.frombuffer(out, dtype=np.uint8).reshape(quarter, 32).copy()
+        chunk = 1 << 18
+        if quarter <= chunk:
+            out = self._run("leaf", [[quarter], code])
+            return np.frombuffer(out, dtype=np.uint8).reshape(quarter, 32).copy()
+        res = np.empty((quarter, 32), dtype=np.uint8)
+        for j in range(0, quarter, chunk):
+            end = min(j + chunk, quarter)
+            c = end - j
+            parts = [code[k * quarter + j:k * quarter + end] for k in range(4)]
+            out = self._run("leaf", [[c], *parts])
+            res[j:end] = np.frombuffer(out, dtype=np.uint8).reshape(c, 32)
+        return res
 
     def merkle_layer(self, nodes):
         count = len(nodes) // 2
-        words = np.frombuffer(np.ascontiguousarray(nodes).tobytes(), dtype="<u8")
-        out = self._run("layer", [[count], words])
-        return np.frombuffer(out, dtype=np.uint8).reshape(count, 32).copy()
+        chunk = 1 << 18
+        if count <= chunk:
+            words = np.ascontiguousarray(nodes).view("<u8")
+            out = self._run("layer", [[count], words])
+            return np.frombuffer(out, dtype=np.uint8).reshape(count, 32).copy()
+        res = np.empty((count, 32), dtype=np.uint8)
+        for i in range(0, count, chunk):
+            end = min(i + chunk, count)
+            words = np.ascontiguousarray(nodes[2 * i:2 * end]).view("<u8")
+            out = self._run("layer", [[end - i], words])
+            res[i:end] = np.frombuffer(out, dtype=np.uint8).reshape(end - i, 32)
+        return res
 
     def ntt_rows(self, rows, plan=None):
         """Natural-order NTT of each row via the generalized Bailey SMEM passes (`bailey_pass`)."""
@@ -154,8 +204,15 @@ class HostEngine:
         if n < 2 or n & (n - 1):
             raise ValueError("NTT length must be a power of two >= 2")
         plan = check_plan(n.bit_length() - 1, plan or bailey_plan(n.bit_length() - 1))
-        out = self._run("bailey", [[n.bit_length() - 1, rows.shape[0], len(plan)],
-                                   [w for p in plan for w in p], rows, local_twiddles()])
+        flat_plan = [w for p in plan for w in p]
+        tw = local_twiddles()
+        if rows.shape[0] > 1 and n >= (1 << 20):
+            res = np.empty_like(rows)
+            for ri in range(rows.shape[0]):
+                out = self._run("bailey", [[n.bit_length() - 1, 1, len(plan)], flat_plan, rows[ri:ri + 1], tw])
+                res[ri] = np.frombuffer(out, dtype="<u8")
+            return res
+        out = self._run("bailey", [[n.bit_length() - 1, rows.shape[0], len(plan)], flat_plan, rows, tw])
         return np.frombuffer(out, dtype="<u8").reshape(rows.shape).astype(np.uint64)
 
     def ntt_rows_radix2(self, rows):
@@ -181,11 +238,34 @@ class HostEngine:
 
     def basefold_round(self, f, w, r):
         n = len(f)
-        out = np.frombuffer(self._run("sumcheck", [[n], list(r), f, w]), dtype="<u8").astype(np.uint64)
-        return out[:9].reshape(3, 3), out[9:].reshape(n // 2, 3)
+        chunk = 1 << 20
+        if n <= chunk:
+            out = np.frombuffer(self._run("sumcheck", [[n], list(r), f, w]), dtype="<u8").astype(np.uint64)
+            return out[:9].reshape(3, 3), out[9:].reshape(n // 2, 3)
+        acc = np.zeros((3, 3), dtype=np.uint64)
+        halved = np.empty((n // 2, 3), dtype=np.uint64)
+        for i in range(0, n, chunk):
+            end = min(i + chunk, n)
+            out = np.frombuffer(self._run("sumcheck", [[end - i], list(r), f[i:end], w[i:end]]), dtype="<u8")
+            t = out[:9].reshape(3, 3)
+            for row in range(3):
+                for limb in range(3):
+                    acc[row, limb] = (int(acc[row, limb]) + int(t[row, limb])) % P
+            halved[i // 2:end // 2] = out[9:].reshape((end - i) // 2, 3)
+        return acc, halved
 
     def halve(self, f, r):
-        return self.basefold_round(f, f, r)[1]
+        n = len(f)
+        chunk = 1 << 20
+        if n <= chunk:
+            out = np.frombuffer(self._run("halve", [[n], list(r), f]), dtype="<u8").astype(np.uint64)
+            return out.reshape(n // 2, 3)
+        res = np.empty((n // 2, 3), dtype=np.uint64)
+        for i in range(0, n, chunk):
+            end = min(i + chunk, n)
+            out = np.frombuffer(self._run("halve", [[end - i], list(r), f[i:end]]), dtype="<u8")
+            res[i // 2:end // 2] = out.reshape((end - i) // 2, 3)
+        return res
 
     @staticmethod
     def dev(a):
